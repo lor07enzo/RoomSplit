@@ -1,0 +1,22 @@
+# Ambiente Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/
+
+# Database 
+*.sqlite3
+
+# Dati Sensibili
+.env
+
+# File di Sistema e IDE
+.DS_Store
+.vscode/
+.idea/
+
+# File Media e Statici caricati (di solito gestiti esternamente in produzione)
+media/
+staticfiles/
