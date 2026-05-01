@@ -186,58 +186,54 @@ Per ogni spesa è possibile:
 
 ### Tabella `user`
 ```
-id, email, nome, cognome, avatar, created_at
+[id, email, nome, cognome, avatar, created_at]
 ```
 
 ### Tabella `gruppo`
 ```
-id, nome, codice_invito, created_at
+[id, nome, codice_invito, created_at]
 ```
 
 ### Tabella `membro`
 ```
-id, user_id (FK), gruppo_id (FK), ruolo, created_at
+[id, user_id, gruppo_id, ruolo, created_at]
 ```
 
 ### Tabella `categoria`
 ```
-id, nome, icona, colore
+[id, nome, icona, colore]
 ```
 
-### Tabella `spesa`
+### Tabella `gruppo_spesa`
 ```
-id, user_id (FK, proprietario spesa), gruppo_id (FK, null se personale), 
-pagatore_id (FK, null se personale), categoria_id (FK),
-importo, descrizione, is_personale (bool), saldata (bool), is_ricorrente (bool),
-created_at, prossimo_pagamento
+[id, user_id, gruppo_id, pagatore_id, categoria_id,
+importo, descrizione, is_personale, saldata, is_ricorrente,
+created_at, prossimo_pagamento]
 ```
 
 ### Tabella `documento`
 ```
-id, spesa_id (FK, null se non ancora assegnato), caricato_da (FK → user),
-url_file, nome_file, tipo_file, status_ocr (enum: pending, success, failed),
-dati_estratti (JSON, risultati OCR), uploaded_at
+[id, gruppo_spesa_id, caricato_da, url_file, nome_file, tipo_file, 
+status_ocr, dati_estratti, uploaded_at]
 ```
 
-### Tabella `quota_spesa`
+### Tabella `spesa`
 ```
-id, spesa_id (FK), membro_id (FK), importo_dovuto
+[id, gruppo_spesa_id, importo_dovuto]
 ```
 
 ### Tabella `rimborso`
 ```
-id, from_membro_id (FK), to_membro_id (FK), importo, nota, created_at
+[id, from_membro_id, to_membro_id, tipologia, importo, nota, created_at]
 ```
 
 ### Tabella `lista_spesa`
 ```
-id, user_id (FK), gruppo_id (FK, null se personale), spesa_id (FK, null se non ancora assegnato),
-titolo, created_at, updated_at
+[id, user_id, gruppo_id, gruppo_spesa_id, titolo, created_at, updated_at]
 ```
 ### Tabella `articolo`
 ```
-id, lista_id (FK), inserito_da (FK), preso_da (FK, null se non preso), nome, quantita,
-created_at
+[id, lista_id, inserito_da, preso_da, nome, quantita, created_at]
 ```
 
 ---
