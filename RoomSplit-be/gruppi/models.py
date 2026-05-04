@@ -1,8 +1,9 @@
 import string
 import uuid
 import random
-from django.conf import settings
 from django.db import models
+
+from project.settings import AUTH_USER_MODEL
 
 # Funzione per generare un codice univoco di 6 caratteri alfanumerici
 def genera_codice_invito():
@@ -11,7 +12,7 @@ def genera_codice_invito():
 # Create your models here.
 class Gruppo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    nome = models.CharField(max_length=50, nullable=False)
+    nome = models.CharField(max_length=50, null=False, blank=False)
     codice_invito = models.CharField(max_length=6, unique=True, default=genera_codice_invito)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -26,7 +27,7 @@ class Membro(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='appartenenze_gruppi')
+    user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='appartenenze_gruppi')
     gruppo = models.ForeignKey(Gruppo, on_delete=models.CASCADE, related_name='membri')
     ruolo = models.CharField(max_length=15, choices=RUOLO_CHOICES, default='membro')
     created_at = models.DateTimeField(auto_now_add=True)
