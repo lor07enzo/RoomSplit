@@ -1,3 +1,193 @@
-from django.shortcuts import render
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from django.db.models.functions import ExtractMonth
+from django.db.models import Sum, F
+from django.utils import timezone
+from spese.models import GruppoSpesa, Spesa
+from gruppi.models import Membro
+import uuid 
 
-# Create your views here.
+class StatisticheMensiliView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        gruppo_id = request.query_params.get('gruppo_id')
+        
+        if not gruppo_id:
+            return Response({"errore": "gruppo_id è obbligatorio"}, status=400)
+
+        # Fallback al mese/anno corrente se non vengono passati dall'app
+        mese = int(request.query_params.get('mese', timezone.now().month))
+        anno = int(request.query_params.get('anno', timezone.now().year))
+
+        # Filtra le spese condivise del gruppo per quel mese/anno
+        spese_mese = GruppoSpesa.objects.filter(
+            gruppo_id=gruppo_id,
+            created_at__year=anno,
+            created_at__month=mese,
+            is_personale=False
+        )
+
+        # Calcolo Totale Speso (aggregate restituisce un dizionario)
+        totale_mese = spese_mese.aggregate(totale=Sum('importo'))['totale'] or 0
+
+        # Raggruppamento per Categoria (PERFETTO per il grafico a torta)
+        # annotate raggruppa i risultati(per categoria)
+        spese_per_categoria = spese_mese.values(
+            nome_categoria=F('categoria__nome'),
+            colore_categoria=F('categoria__colore')
+        ).annotate(
+            totale_speso=Sum('importo')
+        ).order_by('-totale_speso')
+
+        # Trova la Spesa Maggiore del mese
+        spesa_maggiore = spese_mese.order_by('-importo').first()
+        spesa_maggiore_data = {
+            "descrizione": spesa_maggiore.descrizione,
+            "importo": spesa_maggiore.importo,
+            "pagatore": f"{spesa_maggiore.pagatore.nome} {spesa_maggiore.pagatore.cognome}"
+        } if spesa_maggiore else None
+
+        # JSON formattato per il Frontend
+        return Response({
+            "periodo": f"{mese:02d}/{anno}",
+            "totale_speso": totale_mese,
+            "spese_per_categoria": spese_per_categoria,
+            "spesa_maggiore": spesa_maggiore_data
+        })
+    
+
+class StatisticheAnnualiView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        gruppo_id_str = request.query_params.get('gruppo_id')
+        
+        if not gruppo_id_str:
+            return Response({"errore": "gruppo_id è obbligatorio"}, status=400)
+
+        try:
+            gruppo_id = uuid.UUID(gruppo_id_str)
+        except ValueError:
+            return Response({"errore": "gruppo_id non è un UUID valido"}, status=400)
+
+        anno = int(request.query_params.get('anno', timezone.now().year))
+
+        # Filtriamo tutte le spese del gruppo per l'anno richiesto
+        spese_anno = GruppoSpesa.objects.filter(
+            gruppo_id=gruppo_id,
+            created_at__year=anno,
+            is_personale=False
+        )
+
+        # Totale annuo
+        totale_anno = spese_anno.aggregate(totale=Sum('importo'))['totale'] or 0
+
+        # Raggruppamento per mese (Da Gennaio a Dicembre)
+        andamento_mensile = spese_anno.annotate(
+            mese=ExtractMonth('created_at')
+        ).values('mese').annotate(
+            totale_speso=Sum('importo')
+        ).order_by('mese')
+
+        # Formattiamo i dati per assicurarci che ci siano tutti i mesi, anche quelli a zero
+        dati_grafico = {mese: 0 for mese in range(1, 13)}
+        for record in andamento_mensile:
+            dati_grafico[record['mese']] = record['totale_speso']
+
+        return Response({
+            "anno": anno,
+            "totale_anno": totale_anno,
+            "andamento_mensile": [
+                {"mese": mese, "totale": totale} 
+                for mese, totale in dati_grafico.items()
+            ]
+        })
+    
+# Gestisce i saldi di ogni utente all'interno di un gruppo
+class SaldiView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        gruppo_id_str = request.query_params.get('gruppo_id')
+        
+        if not gruppo_id_str:
+            return Response({"errore": "gruppo_id è obbligatorio"}, status=400)
+
+        try:
+            gruppo_id = uuid.UUID(gruppo_id_str)
+        except ValueError:
+            return Response({"errore": "gruppo_id non è un UUID valido"}, status=400)
+
+        # Recupera tutti i membri del gruppo
+        membri = Membro.objects.filter(gruppo_id=gruppo_id).select_related('user')
+        
+        saldi = []
+
+        for membro in membri:
+            utente = membro.user
+
+            # Somma le spese dove l'utente è il pagatore
+            pagato = GruppoSpesa.objects.filter(
+                gruppo_id=gruppo_id,
+                pagatore=utente,
+                is_personale=False
+            ).aggregate(tot=Sum('importo'))['tot'] or 0
+
+            # Somma le quote (Spesa) a carico dell'utente all'interno di questo gruppo
+            dovuto = Spesa.objects.filter(
+                gruppo_spesa__gruppo_id=gruppo_id,
+                debitore=utente
+            ).aggregate(tot=Sum('importo_dovuto'))['tot'] or 0
+
+            #TODO: verificare la necessità di aggiungere la logica dei rimborsi
+
+            bilancio_netto = pagato - dovuto
+
+            saldi.append({
+                "utente_id": utente.id,
+                "nome": f"{utente.nome} {utente.cognome}",
+                "pagato_totale": pagato,
+                "quota_dovuta": dovuto,
+                "bilancio": bilancio_netto
+            })
+
+        saldi = sorted(saldi, key=lambda x: x['bilancio'], reverse=True)
+
+        return Response({
+            "gruppo_id": gruppo_id,
+            "saldi": saldi
+        })
+    
+# Restituisce il riepilogo delle spese TOTALI di un utente (Private + Quote Gruppo)
+class StatistichePersonaliView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        mese = int(request.query_params.get('mese', timezone.now().month))
+        anno = int(request.query_params.get('anno', timezone.now().year))
+
+        # Spese puramente personali
+        totale_personale = GruppoSpesa.objects.filter(
+            user=user,
+            is_personale=True,
+            created_at__year=anno,
+            created_at__month=mese
+        ).aggregate(tot=Sum('importo'))['tot'] or 0
+
+        # Quote dovute nelle spese di gruppo (Tabella Spesa)
+        totale_quote_gruppo = Spesa.objects.filter(
+            debitore=user,
+            gruppo_spesa__is_personale=False,
+            gruppo_spesa__created_at__year=anno,
+            gruppo_spesa__created_at__month=mese
+        ).aggregate(tot=Sum('importo_dovuto'))['tot'] or 0
+
+        return Response({
+            "mese": mese,
+            "spese_private_pure": totale_personale,
+            "tua_parte_spese_gruppo": totale_quote_gruppo,
+            "totale_uscita_mensile": totale_personale + totale_quote_gruppo
+        })

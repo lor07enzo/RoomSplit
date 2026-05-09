@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from django.db.models import Q
 from django.db import transaction
 from spese.models import GruppoSpesa, Rimborso, ListaSpesa, Articolo
+from documenti.models import Documento
 from spese.serializers import GruppoSpesaSerializer, RimborsoSerializer, ListaSpesaSerializer, ArticoloSerializer
 
 
@@ -22,7 +23,9 @@ class GruppoSpesaViewSet(viewsets.ModelViewSet):
     # Gestisce la validazione delle quote e la creazione atomica della spesa con le relative quote
     @transaction.atomic 
     def create(self, request, *args, **kwargs):
+
         quote_data = request.data.pop('quote', [])
+        documento_id = request.data.pop('documento_id', None)
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -45,6 +48,30 @@ class GruppoSpesaViewSet(viewsets.ModelViewSet):
                 return Response(
                     {"errore": f"La somma delle quote ({somma_quote}€) non coincide con l'importo totale ({gruppo_spesa.importo}€)."},
                     status=status.HTTP_400_BAD_REQUEST
+                )
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+        if documento_id:
+            try:
+                documento = Documento.objects.get(id=documento_id)
+                
+                if documento.gruppo_spesa is not None:
+                     return Response(
+                        {"errore": "Questo documento è già stato associato a un'altra spesa."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                documento.gruppo_spesa = gruppo_spesa
+                # Imposta lo stato su completato/confermato (usa le tue costanti esatte del modello)
+                documento.status_ocr = Documento.StatoOCR.COMPLETATO 
+                documento.save()
+                
+            except Documento.DoesNotExist:
+                return Response(
+                    {"errore": "Il documento specificato non esiste."},
+                    status=status.HTTP_404_NOT_FOUND
                 )
 
         headers = self.get_success_headers(serializer.data)

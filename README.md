@@ -141,7 +141,7 @@ Per ogni spesa è possibile:
 |---|---|
 | **Railway** o **Render** | Hosting backend e DB |
 | **EAS (Expo Application Services)** | Build e deploy negli store (App Store / Google Play) |
-| **Cloudinary** o **AWS S3** | Storage per i file caricati (PDF, immagini) |
+| **Cloudinary** | Storage per i file caricati (PDF, immagini) |
 | **GitHub** | Version control e CI/CD |
 
 ---
@@ -213,13 +213,13 @@ created_at, prossimo_pagamento]
 
 ### Tabella `documento`
 ```
-[id, gruppo_spesa_id, caricato_da, url_file, nome_file, tipo_file, 
-status_ocr, dati_estratti, uploaded_at]
+[id, gruppo_spesa_id, caricato_da, file, nome_file, tipo_file, 
+status_ocr, importo_estratto, uploaded_at]
 ```
 
 ### Tabella `spesa`
 ```
-[id, gruppo_spesa_id, importo_dovuto]
+[id, gruppo_spesa_id, debitore_id, importo_dovuto]
 ```
 
 ### Tabella `rimborso`
@@ -233,7 +233,7 @@ status_ocr, dati_estratti, uploaded_at]
 ```
 ### Tabella `articolo`
 ```
-[id, lista_id, inserito_da, preso_da, nome, quantita, created_at]
+[id, lista_spesa_id, inserito_da, preso_da, nome, quantita, created_at]
 ```
 
 ---
@@ -244,7 +244,6 @@ status_ocr, dati_estratti, uploaded_at]
 ```
 POST   /api/v1/auth/register/         → Registrazione
 POST   /api/v1/auth/login/            → Login
-POST   /api/v1/auth/logout/           → Logout
 GET    /api/v1/auth/google/           → OAuth Google
 ```
 
@@ -296,22 +295,22 @@ GET    /api/v1/export/excel/          → Export Excel
 ## Roadmap di Sviluppo
 
 ### Fase 1 — Setup e Autenticazione
-- [ ] Setup progetto Django + PostgreSQL
-- [ ] Setup progetto React Native con Expo
-- [ ] Sistema di registrazione e login
+- [x] Setup progetto Django + PostgreSQL
+- [x] Setup progetto React Native con Expo
+- [x] Sistema di registrazione e login
 - [ ] Login con Google (OAuth2)
-- [ ] Creazione e gestione gruppi/appartamenti
+- [x] Creazione e gestione gruppi/appartamenti
 
 ### Fase 2 — Gestione Spese Core
-- [ ] CRUD spese con categorie
-- [ ] Divisione spese tra coinquilini
-- [ ] Sistema debiti e crediti
-- [ ] Registrazione rimborsi
+- [x] CRUD spese con categorie
+- [x] Divisione spese tra coinquilini
+- [x] Sistema debiti e crediti
+- [x] Registrazione rimborsi
 
 ### Fase 3 — Upload e Parsing Documenti
-- [ ] Upload PDF/immagini
-- [ ] Integrazione pdfplumber
-- [ ] Integrazione pytesseract (OCR)
+- [x] Upload PDF/immagini
+- [x] Integrazione pdfplumber
+- [x] Integrazione pytesseract (OCR)
 - [ ] Flusso di conferma utente post-estrazione
 
 ### Fase 4 — Statistiche e Dashboard
@@ -320,7 +319,7 @@ GET    /api/v1/export/excel/          → Export Excel
 - [ ] Dashboard riepilogativa
 
 ### Fase 5 — Funzionalità Extra
-- [ ] Lista della spesa condivisa
+- [x] Lista della spesa condivisa
 - [ ] Export PDF ed Excel
 - [ ] Notifiche in-app
 - [ ] Dark mode

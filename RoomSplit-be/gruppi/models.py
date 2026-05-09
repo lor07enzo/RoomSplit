@@ -9,7 +9,6 @@ from project.settings import AUTH_USER_MODEL
 def genera_codice_invito():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
-# Create your models here.
 class Gruppo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nome = models.CharField(max_length=50, null=False, blank=False)
