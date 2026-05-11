@@ -1,4 +1,4 @@
-# 🏠 RoomSplit — App Mobile per Studenti Fuorisede
+# 🏠 RoomSplit — App Mobile e Webapp per Studenti Fuorisede
 
 ## Indice
 1. [Descrizione del Progetto](#descrizione-del-progetto)
@@ -13,13 +13,13 @@
 
 ## Descrizione del Progetto
 
-**RoomSplit** è un'app mobile pensata per studenti fuorisede che condividono un appartamento. Permette di gestire sia le **spese comuni** dell'appartamento (bollette, affitto, uscite, spesa, ecc.) da dividere con i coinquilini, sia le **spese personali** dell'utente (biglietto treno/autobus, benzina, sfizi, ecc.) in modo semplice e trasparente. Integra inoltre la possibilità di caricare documenti come bollette PDF per l'estrazione automatica dei costi.
+**RoomSplit** è un'app mobile e webapp pensata per studenti fuorisede che condividono un appartamento. Sviluppata con un approccio **Web-First** per garantire la massima accessibilità da browser, permette di gestire sia le **spese comuni** dell'appartamento (bollette, affitto, uscite, spesa, ecc.) da dividere con i coinquilini, sia le **spese personali** dell'utente in modo semplice e trasparente. Integra inoltre la possibilità di caricare documenti come bollette PDF sul cloud per l'estrazione automatica dei costi tramite AI.
 
 ### Obiettivi principali
 - Semplificare la gestione economica tra coinquilini
-- Automatizzare la lettura delle bollette tramite OCR/parsing PDF
-- Offrire statistiche mensili e annuali delle spese
-- Fornire un sistema chiaro di debiti e crediti tra utenti
+- Automatizzare la lettura delle bollette tramite OCR/parsing PDF con storage in Cloud
+- Offrire statistiche mensili, annuali e budget personali
+- Fornire un sistema chiaro di debiti e crediti (Net Balance) tra utenti
 
 ---
 
@@ -111,30 +111,29 @@ Per ogni spesa è possibile:
 ### Backend
 | Tecnologia | Versione consigliata | Utilizzo |
 |---|---|---|
-| **Python** | 3.11+ | Linguaggio principale |
-| **Django** | 5.x | Framework web, ORM, autenticazione |
-| **Django REST Framework** | 3.x | Creazione delle API REST |
-| **PostgreSQL** | 16 | Database relazionale principale |
-| **pdfplumber** | latest | Estrazione testo da PDF |
+| **Python** | 3.13+ | Linguaggio principale |
+| **Django** | 6.x | Framework web, ORM, autenticazione |
+| **Django REST Framework** | 4.x | Creazione delle API REST |
+| **PostgreSQL** | 17 | Database relazionale principale |
+| **Cloudinary** | latest | Cloud storage per i file caricati (PDF, immagini) |
+| **django-cloudinary-storage** | latest | Integrazione storage Django-Cloudinary |
+| **pdfplumber** | latest | Estrazione testo da PDF (Lettura in RAM) |
 | **pytesseract** | latest | OCR per immagini scansionate |
-| **Pillow** | latest | Manipolazione immagini |
+| **Pillow** | latest | Manipolazione immagini pre-OCR |
 | **django-allauth** | latest | Login sociale (Google OAuth2) |
-| **celery** *(opzionale)* | 5.x | Task asincroni (es. elaborazione PDF) |
-| **python-telegram-bot** | latest | Integrazione bot Telegram |
-| **twilio** | latest | API per messaggistica WhatsApp |
-| **scikit-learn** o **prophet** | latest | Algoritmi di predizione spese |
+| **python-telegram-bot** | latest | Integrazione bot Telegram (Pianificata) |
 | **stripe** / **paypal-checkout**| latest | SDK per pagamenti (Playground) |
 
-### Frontend (Mobile App)
+### Frontend (App Mobile & Web)
 | Tecnologia | Versione consigliata | Utilizzo |
 |---|---|---|
-| **React Native** | latest | Framework UI Mobile |
-| **Expo** | latest | Toolchain e ambiente di sviluppo |
-| **React Navigation**| 6+ | Navigazione tra schermate |
-| **Axios** | latest | Chiamate HTTP alle API |
-| **react-native-chart-kit** | latest | Grafici statistiche |
-| **NativeWind** | latest | Styling basato su Tailwind per React Native |
-| **React Hook Form** | latest | Gestione form |
+| **React Native** | latest | Framework UI principale |
+| **Expo Router** | latest | File-system routing ottimizzato per il Web e Mobile |
+| **react-native-reusables**| latest | Libreria di componenti UI ispirata a shadcn/ui |
+| **NativeWind** | latest | Styling basato su Tailwind CSS |
+| **Axios** | latest | Chiamate HTTP asincrone alle API |
+| **React Hook Form** | latest | Gestione validazione form |
+| **react-native-chart-kit** | latest | Visualizzazione grafici per statistiche |
 
 ### Infrastruttura e Deploy
 | Tecnologia | Utilizzo |
@@ -150,8 +149,8 @@ Per ogni spesa è possibile:
 
 ```
 ┌─────────────────────────────────────────┐
-│         MOBILE APP (React Native)       │
-│               iOS / Android             │
+│        CLIENT UNIVERSALE (Expo Router)  │
+│             Web / iOS / Android         │
 └──────────────┬──────────────────────────┘
                │ HTTP/REST (JSON)
                ▼
@@ -168,21 +167,23 @@ Per ogni spesa è possibile:
 │                                         │
 │  ┌──────────────────────────────────┐   │
 │  │     Parser PDF / OCR Engine      │   │
-│  │  (pdfplumber + pytesseract)      │   │
+│  │   (Elaborazione File in RAM)     │   │
 │  └──────────────────────────────────┘   │
-└──────────────┬──────────────────────────┘
-               │
-       ┌───────┴───────┐
-       ▼               ▼
-┌────────────┐   ┌───────────────┐
-│ PostgreSQL │   │  File Storage │
-│  (Railway) │   │ (Cloudinary)  │
-└────────────┘   └───────────────┘
+└──────────────┬───────────────┬──────────┘
+               │               │
+       ┌───────┴───────┐       ▼
+       ▼               │ ┌───────────────┐
+┌────────────┐         │ │  File Storage │
+│ PostgreSQL │         │ │ (Cloudinary)  │
+│  (Railway) │         │ └───────────────┘
+└────────────┘         └─────────────────┘
 ```
 
 ---
 
 ## Struttura del Database
+
+> **Nota Architetturale:** Per garantire elevati standard di sicurezza, prevenire attacchi di enumerazione (IDOR) e facilitare future sincronizzazioni offline del client mobile, **tutte le chiavi primarie (`id`) del database utilizzano il formato UUIDv4** anziché interi auto-incrementanti. Di conseguenza, anche tutte le Foreign Key referenziano stringhe UUID.
 
 ### Tabella `user`
 ```
@@ -266,9 +267,10 @@ POST   /api/v1/spese/upload-pdf/      → Upload bolletta + estrazione
 
 ### Statistiche e Predizioni
 ```
-GET    /api/v1/statistiche/mensili/   → Statistiche mese corrente
-GET    /api/v1/statistiche/annuali/   → Statistiche anno corrente
-GET    /api/v1/statistiche/saldi/     → Saldi debiti/crediti
+GET    /api/v1/statistiche/gruppo/mensili/   → Statistiche mese corrente
+GET    /api/v1/statistiche/gruppo/annuali/   → Statistiche anno corrente
+GET    /api/v1/statistiche/gruppo/saldi/     → Saldi debiti/crediti
+GET    /api/v1/statistiche/personali/        → Statistiche personali
 GET    /api/v1/statistiche/predizioni/→ Stima prossime spese/bollette
 ```
 
@@ -296,34 +298,35 @@ GET    /api/v1/export/excel/          → Export Excel
 
 ### Fase 1 — Setup e Autenticazione
 - [x] Setup progetto Django + PostgreSQL
-- [x] Setup progetto React Native con Expo
-- [x] Sistema di registrazione e login
+- [x] Setup progetto React Native con Expo Router
+- [x] Sistema di registrazione e login (Backend)
 - [ ] Login con Google (OAuth2)
 - [x] Creazione e gestione gruppi/appartamenti
 
 ### Fase 2 — Gestione Spese Core
-- [x] CRUD spese con categorie
-- [x] Divisione spese tra coinquilini
-- [x] Sistema debiti e crediti
+- [x] CRUD spese con categorie personalizzate
+- [x] Divisione spese tra coinquilini transazionale
+- [x] Sistema calcolo debiti e crediti (Net Balance)
 - [x] Registrazione rimborsi
 
 ### Fase 3 — Upload e Parsing Documenti
-- [x] Upload PDF/immagini
-- [x] Integrazione pdfplumber
-- [x] Integrazione pytesseract (OCR)
-- [ ] Flusso di conferma utente post-estrazione
+- [x] Integrazione Cloudinary per file storage sicuro
+- [x] Download file in RAM ed elaborazione sicura
+- [x] Integrazione pdfplumber per PDF nativi
+- [x] Integrazione pytesseract (OCR) con pattern matching intelligente
+- [ ] Sviluppo UI Frontend per conferma importo estratto
 
 ### Fase 4 — Statistiche e Dashboard
-- [ ] Grafici mensili con Chart.js
-- [ ] Statistiche annuali
-- [ ] Dashboard riepilogativa
+- [x] Sviluppo API Backend: Statistiche mensili e annuali
+- [x] Sviluppo API Backend: Calcolo Saldi e Budget Personale
+- [ ] Sviluppo UI: Grafici mensili e andamento annuale
+- [ ] Sviluppo UI: Dashboard riepilogativa (Web & Mobile)
 
 ### Fase 5 — Funzionalità Extra
 - [x] Lista della spesa condivisa
 - [ ] Export PDF ed Excel
-- [ ] Notifiche in-app
-- [ ] Dark mode
-- [ ] Ottimizzazione performance su device datati
+- [ ] Notifiche in-app e Web
+- [ ] Dark mode (Supporto nativo tramite NativeWind)
 
 ### Fase 6 — Integrazioni Avanzate (AI, Pagamenti e Bot)
 - [ ] Configurazione Webhook e Bot Telegram/WhatsApp
