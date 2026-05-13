@@ -3,51 +3,54 @@ import { authService } from "@/services/auth";
 import { User } from "@/types/types";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-
 interface AuthContextType {
-    user: User | null;
-    isLoading: boolean;
-    register: (dati: any) => Promise<boolean>;
-    login: (credenziali: any) => Promise<boolean>;
-    logout: () => Promise<void>;
+  user: User | null;
+  isLoading: boolean;
+  register: (dati: any) => Promise<boolean>;
+  login: (credenziali: any) => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadStorageData = async () => {
-      try {
-        const savedToken = await tokenStorage.getToken();
-        if (savedToken) {
-          // Opzionale: Qui potresti fare una chiamata GET /v1/auth/user/ 
-          // per verificare che il token sia ancora valido e prendere i dati aggiornati
-          // Per ora simuliamo il ripristino se il token esiste
-          console.log("Token trovato, ripristino sessione...");
+    const checkAuth = async () => {
+      const token = await tokenStorage.getAccessToken();
+      
+      if (token) {
+        try {
+          const realUser = await authService.getUserProfile();
+          setUser(realUser);
+        } catch (error) {
+          await tokenStorage.clearAllTokens();
+          setUser(null);
         }
-      } catch (e) {
-        console.error("Errore recupero token", e);
-      } finally {
-        setIsLoading(false);
       }
+      setIsLoading(false);
     };
-    loadStorageData();
+    checkAuth();
   }, []);
-
 
   const login = async (credenziali: any) => {
     setIsLoading(true);
     try {
       const responseData = await authService.login(credenziali);
-      if (responseData.key) {
-        await tokenStorage.saveToken(responseData.key);
-        setUser(responseData.user);
+      
+      if (responseData.access && responseData.refresh) {
+        
+        await tokenStorage.saveTokens(responseData.access, responseData.refresh);
+        
+        const realUser = await authService.getUserProfile();
+        setUser(realUser);
+        return true;
       }
-      return true;
-    } catch (error) {
+      return false;
+    } catch (error: any) {
+      console.error("Errore di login:", error.response?.data || error.message);
       return false;
     } finally {
       setIsLoading(false);
@@ -55,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await tokenStorage.removeToken();
+    await tokenStorage.clearAllTokens();
     setUser(null);
   };
 
@@ -66,7 +69,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (responseData && responseData.user) {
         setUser(responseData.user);
-        // TODO: In futuro qui salveremo responseData.key (il token) nel SecureStore
       }
       return true;
     } catch (error) {

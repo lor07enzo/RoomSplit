@@ -56,3 +56,17 @@
     --chart-5: 340 75% 55%;
   }
 }
+
+/* Assicura che i tag base del web abbiano un'altezza definita */
+html, body, #root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Se usi Expo per il web, a volte inietta un div interno che va "allungato" */
+#root > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}

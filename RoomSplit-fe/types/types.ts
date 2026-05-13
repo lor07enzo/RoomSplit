@@ -6,6 +6,7 @@ export interface User {
 }
 
 export interface AuthResponse {
-  key: string;
+  access: string;
+  refresh: string;
   user: User;
 }

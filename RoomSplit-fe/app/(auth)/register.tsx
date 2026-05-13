@@ -36,7 +36,7 @@ export default function RegisterScreen() {
     const success = await register(data);
 
     if (success) {
-      router.replace('/'); 
+      router.replace('/(auth)'); 
     } else {
       setServerError('Errore dal server. L\'email potrebbe essere già in uso.');
     }
@@ -142,7 +142,7 @@ export default function RegisterScreen() {
           <Button 
             variant="ghost" 
             className="w-full" 
-            onPress={() => router.replace('/')}
+            onPress={() => router.replace('/(auth)')}
             disabled={isLoading}
           >
             <Text className="text-gray-600">

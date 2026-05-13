@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import { AuthResponse } from "@/types/types";
+import { User } from "@/types/types";
 
 
 export const authService = {
@@ -13,4 +14,9 @@ export const authService = {
     const response = await api.post<AuthResponse>('/v1/auth/login/', credenziali);
     return response.data;
   },
+
+  getUserProfile: async(): Promise<User> => {
+    const response = await api.get<User>('/v1/auth/user/');
+    return response.data;
+  }
 };
