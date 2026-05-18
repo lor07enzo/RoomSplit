@@ -133,7 +133,7 @@ Per ogni spesa è possibile:
 | **NativeWind** | latest | Styling basato su Tailwind CSS |
 | **Axios** | latest | Chiamate HTTP asincrone alle API |
 | **React Hook Form** | latest | Gestione validazione form |
-| **react-native-chart-kit** | latest | Visualizzazione grafici per statistiche |
+| **React-native-victory** | latest | Visualizzazione grafici per statistiche |
 
 ### Infrastruttura e Deploy
 | Tecnologia | Utilizzo |

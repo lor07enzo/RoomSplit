@@ -6,7 +6,7 @@ class DocumentoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Documento
         fields = ('id', 'gruppo_spesa', 'caricato_da', 'nome_file', 'file', 'tipo_file', 'status_ocr', 'importo_estratto', 'uploaded_at')
-        read_only_fields = ( 'caricato_da', 'status_ocr', 'importo_estratto', 'uploaded_at')
+        read_only_fields = ( 'caricato_da', 'status_ocr', 'importo_estratto', 'uploaded_at', 'gruppo_spesa')
 
         # Rende i campi opzionali per il frontend durante la POST
         extra_kwargs = {

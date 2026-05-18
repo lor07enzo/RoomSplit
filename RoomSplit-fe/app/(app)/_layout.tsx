@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, Pressable, ScrollView } from 'react-native';
-import { Slot, useRouter, usePathname, Href, Redirect } from 'expo-router';
-// Rimosse le icone non più necessarie come Menu, Settings e LogOut
+import { Slot, useRouter, usePathname, useGlobalSearchParams, Href, Redirect } from 'expo-router';
 import { LayoutGrid, ReceiptText, ShoppingCart, Users, User, Bell, Check } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 
@@ -14,6 +13,7 @@ type NavItem = {
 export default function MobileNavigationLayout() {
   const router = useRouter();
   const pathname = usePathname();
+  const params = useGlobalSearchParams();
   const { user, isLoading } = useAuth();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   // Dati mockati per le notifiche (li collegheremo a Django via WebSocket o Polling)
@@ -43,6 +43,10 @@ export default function MobileNavigationLayout() {
 
   // Titolo dinamico in base alla rotta attuale
   const getHeaderTitle = () => {
+    if (pathname.startsWith('/spesa/')) return 'Dettagli Spesa';
+    if (pathname === '/nuova-spesa') return params.editId ? 'Modifica Spesa' : 'Nuova Spesa';
+    if (pathname === '/profilo') return 'Profilo';
+
     const currentItem = NAV_ITEMS.find(item => item.path === pathname);
     return currentItem ? currentItem.name : 'RoomSplit';
   };
@@ -61,9 +65,7 @@ export default function MobileNavigationLayout() {
           {getHeaderTitle()}
         </Text>
 
-        {/* Gruppo Icone di Destra (Notifiche + Profilo) */}
         <View className="flex-row items-center gap-4">
-          
           {/* Pulsante Notifiche */}
           <TouchableOpacity 
             className="p-2 relative"

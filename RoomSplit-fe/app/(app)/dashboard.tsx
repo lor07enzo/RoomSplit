@@ -3,8 +3,10 @@ import { Text } from '@/components/ui/text';
 import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
 import { ArrowUpRight, Bell, Plus, Receipt } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
 export default function DashboardScreen() {
+    const router = useRouter()
     const { user, logout } = useAuth();
     const [viewMode, setViewMode] = useState<'gruppo' | 'personali'>('gruppo');
 
@@ -112,7 +114,10 @@ export default function DashboardScreen() {
                 <View className="h-24" />
             </ScrollView>
 
-            <TouchableOpacity className="absolute bottom-6 right-6 bg-blue-600 w-14 h-14 rounded-full items-center justify-center shadow-lg">
+            <TouchableOpacity 
+              onPress={() => router.push('/nuova-spesa')}
+              className="absolute bottom-6 right-6 bg-blue-600 w-14 h-14 rounded-full items-center justify-center shadow-lg"
+            >  
                 <Plus size={30} color="white" />
             </TouchableOpacity>
         </View>      

@@ -14,6 +14,14 @@ class Categoria(models.Model):
         return self.nome
 
 class GruppoSpesa(models.Model):
+
+    FREQUENZA_CHOICES = [
+        ("giorni", "Giorni"),
+        ("settimane", "Settimane"),
+        ("mesi", "Mesi"),
+        ("anni", "Anni")
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nome = models.CharField(max_length=50, null=False, blank=False)
 
@@ -27,6 +35,8 @@ class GruppoSpesa(models.Model):
     is_personale = models.BooleanField(default=False)
     saldata = models.BooleanField(default=False)
     is_ricorrente = models.BooleanField(default=False)
+    frequenza_numero = models.IntegerField(default=1, null=True, blank=True)
+    frequenza_tipo = models.CharField(choices=FREQUENZA_CHOICES, max_length=20, default="mesi", null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     prossimo_pagamento = models.DateTimeField(null=True, blank=True)
 

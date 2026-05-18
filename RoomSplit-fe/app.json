@@ -31,7 +31,15 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "L'app ha bisogno di accedere alle tue foto per caricare gli scontrini.",
+          "cameraPermission": "L'app ha bisogno della fotocamera per scansionare gli scontrini cartacei."
+        }
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true
