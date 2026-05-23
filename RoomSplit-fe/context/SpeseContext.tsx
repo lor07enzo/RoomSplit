@@ -1,8 +1,7 @@
-// context/SpeseContext.tsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Categoria, GruppoSpesa } from '@/types/types';
 import { speseService } from '@/services/spese';
-import { useAuth } from './AuthContext'; // Per ricaricare le spese quando l'utente fa login/logout
+import { useAuth } from './AuthContext';
 
 interface SpeseContextType {
     spese: GruppoSpesa[];

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, Pressable, ScrollView } from 'react-native';
 import { Slot, useRouter, usePathname, useGlobalSearchParams, Href, Redirect } from 'expo-router';
-import { LayoutGrid, ReceiptText, ShoppingCart, Users, User, Bell, Check } from 'lucide-react-native';
+import { LayoutGrid, ReceiptText, ShoppingCart, Users, User, Bell, Check, ChevronLeft } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
 
 type NavItem = {
@@ -41,10 +41,14 @@ export default function MobileNavigationLayout() {
     { name: 'Gruppi', path: '/gruppi' as Href, icon: Users },
   ];
 
+  // Identifica se l'utente si trova su una delle 4 schermate principali della TabBar
+  const isRootTab = NAV_ITEMS.some(item => item.path === pathname);
+
   // Titolo dinamico in base alla rotta attuale
   const getHeaderTitle = () => {
-    if (pathname.startsWith('/spesa/')) return 'Dettagli Spesa';
-    if (pathname === '/nuova-spesa') return params.editId ? 'Modifica Spesa' : 'Nuova Spesa';
+    if (pathname.startsWith('/gruppi/') || pathname.startsWith('/gruppo/')) return 'Info Gruppo';
+    if (pathname.startsWith('/spesa/') || pathname.startsWith('/spese/')) return 'Info Spesa';
+    if (pathname === '/nuova-spesa') return params.editId ? 'Modifica' : 'Nuovo';
     if (pathname === '/profilo') return 'Profilo';
 
     const currentItem = NAV_ITEMS.find(item => item.path === pathname);
@@ -59,14 +63,25 @@ export default function MobileNavigationLayout() {
     <View className="flex-1 bg-slate-50 dark:bg-slate-900">
       
       {/* HEADER SUPERIORE */}
-      <View className="h-16 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex-row items-center justify-between px-4">
+      <View className="h-16 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 flex-row items-center justify-between px-4">
         
-        <Text className="text-xl font-bold text-slate-900 dark:text-white">
-          {getHeaderTitle()}
-        </Text>
+        {/* BACK BUTTON e TITOLO PAGINA */}
+        <View className="flex-row items-center flex-1 pr-4">
+          {!isRootTab && (
+            <TouchableOpacity 
+              onPress={() => router.back()} 
+              className="bg-slate-100 dark:bg-slate-700 p-2 rounded-full mr-3 active:opacity-70"
+            >
+              <ChevronLeft size={22} color="#2563EB" />
+            </TouchableOpacity>
+          )}
+          <Text className="text-xl font-bold text-slate-900 dark:text-white">
+            {getHeaderTitle()}
+          </Text>
+        </View>
 
         <View className="flex-row items-center gap-4">
-          {/* Pulsante Notifiche */}
+          {/* NOTIFICHE */}
           <TouchableOpacity 
             className="p-2 relative"
             onPress={() => setIsNotificationsOpen(true)}
@@ -77,7 +92,7 @@ export default function MobileNavigationLayout() {
             )}
           </TouchableOpacity>
 
-          {/* Pulsante Profilo */}
+          {/* PROFILO */}
           <TouchableOpacity 
             className="bg-slate-100 dark:bg-slate-700 p-2 rounded-full"
             onPress={() => router.push('/profilo' as Href)} 
@@ -100,7 +115,7 @@ export default function MobileNavigationLayout() {
         >
           <View className="absolute top-16 right-4 w-[90%] max-w-[340px] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden max-h-[80%]">
             
-            {/* Header del Popover */}
+            {/* HEADER DEL POPOVER */}
             <View className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex-row justify-between items-center bg-slate-50 dark:bg-slate-800/50">
               <Text className="font-bold text-base text-slate-900 dark:text-white">
                 Notifiche {unreadCount > 0 && `(${unreadCount})`}
@@ -112,7 +127,7 @@ export default function MobileNavigationLayout() {
               )}
             </View>
 
-            {/* Lista Notifiche Scorrevole */}
+            {/* LISTA NOTIFICHE */}
             <ScrollView className="px-2" showsVerticalScrollIndicator={false}>
               {notifications.length === 0 ? (
                 <Text className="text-center text-slate-500 py-6">Nessuna notifica recente.</Text>
@@ -157,7 +172,7 @@ export default function MobileNavigationLayout() {
               className="items-center p-2 flex-1"
             >
               <View className={`p-1.5 rounded-full ${isActive ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}>
-                <item.icon size={24} color={isActive ? '#2563eb' : '#94a3b8'} />
+                <item.icon size={22} color={isActive ? '#2563eb' : '#94a3b8'} />
               </View>
               <Text className={`text-[10px] mt-1 font-medium ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500'}`}>
                 {item.name}

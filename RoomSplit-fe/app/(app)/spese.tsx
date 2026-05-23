@@ -14,7 +14,6 @@ export default function SpeseScreen() {
   // Logica per filtrare le spese in base alla ricerca e ai tab
   const speseFiltrate = useMemo(() => {
     return spese.filter(spesa => {
-      // Usiamo 'nome' o 'descrizione' (se presente) per la ricerca
       const testoSpesa = `${spesa.nome} ${spesa.descrizione || ''}`.toLowerCase();
       const matchSearch = testoSpesa.includes(searchQuery.toLowerCase());
       

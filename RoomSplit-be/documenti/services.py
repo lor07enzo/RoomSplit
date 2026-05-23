@@ -60,22 +60,17 @@ def estrai_dati_bolletta(documento_id):
             return False
         
         file_stream.close()
-        
-        # DEBUG
-        print("\n\n--- INIZIO TESTO ESTRATTO OCR ---")
-        print(testo_estratto)
-        print("--- FINE TESTO ESTRATTO OCR ---\n\n")
 
         importo_definitivo = None
         
-        # Livello 1 (Alta affidabilità): Cerca frasi inequivocabili
+        # Livello 1 
         pattern_forte = r'(?:totale iva inclusa|quanto pago per questa fattura\??|totale da pagare|importo totale|totale bolletta|importo pagato)[\s\S]{0,30}?(\d{1,4}[.,]\s?\d{2})'
         match_forte = re.search(pattern_forte, testo_estratto, re.IGNORECASE)
         
         if match_forte:
             importo_definitivo = match_forte.group(1)
         else:
-            # Livello 2 (Fallback): Cerca tutte le parole "totale/importo", prende tutti i numeri vicini e sceglie il più alto
+            # Livello 2
             pattern_debole = r'(?:totale|importo|da pagare|complessivo|pagato)[\s\S]{0,40}?(\d{1,4}[.,]\s?\d{2})'
             matches_deboli = re.finditer(pattern_debole, testo_estratto, re.IGNORECASE)
             

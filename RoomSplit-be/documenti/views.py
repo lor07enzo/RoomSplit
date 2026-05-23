@@ -14,15 +14,20 @@ import threading
 class DocumentoViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentoSerializer
     permission_classes = [IsAuthenticated]
-    # Permette di accettare l'upload di file e form-data
     parser_classes = (MultiPartParser, FormParser)
 
     def get_queryset(self):
         user = self.request.user
-        return Documento.objects.filter(
+        queryset = Documento.objects.filter(
             Q(caricato_da=user) | 
             Q(gruppo_spesa__gruppo__membri__user=user)
         ).distinct().order_by('-uploaded_at')
+
+        gruppo_spesa_id = self.request.query_params.get('gruppo_spesa', None)
+        if gruppo_spesa_id:
+            queryset = queryset.filter(gruppo_spesa_id=gruppo_spesa_id)
+
+        return queryset
 
     def perform_create(self, serializer):
         file_obj = self.request.FILES.get('file')

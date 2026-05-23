@@ -39,8 +39,14 @@ export const documentiService = {
     },
 
     // Metodo per recuperare il documento di una singola spesa
-    getDocBySpesa: async (spesaId: string): Promise<Documento | null> => {
-        const response = await api.get<Documento[]>(`/v1/documenti/?gruppo_spesa=${spesaId}`);
-        return response.data.length > 0 ? response.data[0] : null;
+    getDocBySpesa: async (gruppoSpesaId: string): Promise<Documento | null> => {
+        const response = await api.get<Documento[]>('/v1/documenti/', {
+            params: { gruppo_spesa: gruppoSpesaId }
+        });
+
+        if (response.data && response.data.length > 0) {
+            return response.data[0];
+        }
+        return null;
     },
 }

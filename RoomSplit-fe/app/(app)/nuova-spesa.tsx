@@ -4,17 +4,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { useSpese } from '@/context/SpeseContext'; 
 import { Euro, AlignLeft, Check, Type, Users } from 'lucide-react-native';
-import { Documento } from '@/types/types';
+import { Documento, GruppoSpesa } from '@/types/types';
 import UploadDocumento from '@/components/spese/UploadDocumento';
 import { documentiService } from '@/services/documenti';
 import RicorrenzaSelector from '@/components/spese/RicorrenzaSelector';
+import { useGruppi } from '@/context/GruppiContext';
+import DivisioneSpesaGruppoScreen from '@/components/spese/DivisioneSpesaGruppo';
 
-
-// TODO: Sostituire questo mock con i gruppi reali provenienti dal Context o Backend
-const GRUPPI_MOCK = [
-  { id: '1', nome: 'Casa Studenti' },
-  { id: '2', nome: 'Vacanze Estive' },
-];
 
 interface FormDataSpese {
   nome: string;
@@ -26,12 +22,14 @@ interface FormDataSpese {
   is_ricorrente: boolean;
   frequenza_numero: string;
   frequenza_tipo: string;
+  debitori: string[];
 }
 
 export default function NuovaSpesaScreen() {
   const router = useRouter();
   const { editId } = useLocalSearchParams<{ editId?: string }>();
   const { addSpesa, updateSpesa, spese, categorie, isLoadingCategorie } = useSpese(); 
+  const { gruppi, fetchGruppi } = useGruppi();
   const [fetchedDocument, setFetchedDocument] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentoId, setDocumentoId] = useState<string | null>(null);
@@ -41,11 +39,12 @@ export default function NuovaSpesaScreen() {
       descrizione: '',
       importo: '',
       categoria: '',
-      gruppo: GRUPPI_MOCK[0]?.nome || '',
+      gruppo: '',
       is_personale: false,
       is_ricorrente: false,
       frequenza_numero: '1', 
       frequenza_tipo: 'mesi',
+      debitori: [],
     }
   });
 
@@ -53,6 +52,16 @@ export default function NuovaSpesaScreen() {
   const selectedGruppo = watch('gruppo');
   const isPersonale = watch('is_personale');
   const isRicorrente = watch('is_ricorrente');
+
+  useEffect(() => {
+    fetchGruppi();
+  }, []);
+
+  useEffect(() => {
+    if (!editId && gruppi.length > 0 && !selectedGruppo) {
+      setValue('gruppo', gruppi[0].id);
+    }
+  }, [gruppi, editId]);
 
   useEffect(() => {
     if (editId && spese.length > 0) {
@@ -63,6 +72,7 @@ export default function NuovaSpesaScreen() {
           descrizione: spesaDaModificare.descrizione || '',
           importo: spesaDaModificare.importo.toString(),
           categoria: spesaDaModificare.categoria as unknown as string,
+          gruppo: spesaDaModificare.gruppo?.id || '',
           is_personale: spesaDaModificare.is_personale,
           is_ricorrente: spesaDaModificare.is_ricorrente,
         });
@@ -102,23 +112,25 @@ export default function NuovaSpesaScreen() {
     const payload = {
       ...data,
       importo: parseFloat(data.importo.replace(',', '.')),
-      documento_id: documentoId,
+      gruppo: data.is_personale ? null : data.gruppo,
+      documento_id: documentoId || null,
       frequenza_valore: data.is_ricorrente ? parseInt(data.frequenza_numero) : null,
       frequenza_tipo: data.is_ricorrente ? data.frequenza_tipo : null,
+      debitori: data.is_personale ? [] : data.debitori,
     };
 
     let success;
     if (editId) {
-      // Se è presente un'ID
-      success = await updateSpesa(editId, payload);
+      success = await updateSpesa(editId, payload as unknown as Partial<GruppoSpesa>);
     } else {
-      // Altrimenti fa una CREATE
-      success = await addSpesa(payload as any); //TODO: rimuovere "as any" quando creo i gruppi
+      success = await addSpesa(payload as unknown as Partial<GruppoSpesa>);
     }
 
     setIsSubmitting(false);
     
     if (success) {
+      setDocumentoId(null);
+      setFetchedDocument(null);
       router.back();
     } else {
       alert("Errore durante il salvataggio.");
@@ -129,7 +141,7 @@ export default function NuovaSpesaScreen() {
     <ScrollView className="flex-1 bg-slate-50 dark:bg-slate-900" keyboardShouldPersistTaps="handled">
       <View className="p-4 pt-8 pb-12">
         
-        {/* --- IMPORTO --- */}
+        {/* IMPORTO */}
         <View className="mb-10 w-full items-center">
           <Text className="text-slate-500 dark:text-slate-400 font-medium mb-3">Importo Totale</Text>
           
@@ -213,40 +225,39 @@ export default function NuovaSpesaScreen() {
           <Text className="text-slate-700 dark:text-slate-300 font-semibold mb-2 ml-1">Categoria</Text>
 
           {isLoadingCategorie ? (
-               <ActivityIndicator size="small" color="#3b82f6" className="ml-2 self-start" />
-            ) : (
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false} 
-                contentContainerStyle={{ paddingRight: 20, paddingBottom: 4 }}
-                className="flex-row"
-              >
-                {categorie.map((cat) => {
-                  const isSelected = selectedCategoria === cat.nome;
-                  
-                  return (
-                    <TouchableOpacity
-                      key={cat.id}
-                      onPress={() => setValue('categoria', cat.nome)}
-                      className="flex-row items-center px-4 py-2 rounded-full mr-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
-                      style={isSelected ? {
-                        // Aggiunge il 15% di opacità allo sfondo del bottone
-                        backgroundColor: `${cat.colore}15`, 
-                        borderColor: cat.colore,
-                      } : {}}
+            <ActivityIndicator size="small" color="#3b82f6" className="ml-2 self-start" />
+          ) : (
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false} 
+              contentContainerStyle={{ paddingRight: 20, paddingBottom: 4 }}
+              className="flex-row"
+            >
+              {categorie.map((cat) => {
+                const isSelected = selectedCategoria === cat.nome;
+                
+                return (
+                  <TouchableOpacity
+                    key={cat.id}
+                    onPress={() => setValue('categoria', cat.nome)}
+                    className="flex-row items-center px-4 py-2 rounded-full mr-3 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800"
+                    style={isSelected ? {
+                      backgroundColor: `${cat.colore}15`, 
+                      borderColor: cat.colore,
+                    } : {}}
+                  >
+                    <Text className="mr-2 text-base">{cat.icona}</Text>
+                    <Text
+                      className={`font-semibold text-sm ${isSelected ? '' : 'text-slate-600 dark:text-slate-400'}`}
+                      style={isSelected ? { color: cat.colore } : {}}
                     >
-                      <Text className="mr-2 text-base">{cat.icona}</Text>
-                      <Text
-                        className={`font-semibold text-sm ${isSelected ? '' : 'text-slate-600 dark:text-slate-400'}`}
-                        style={isSelected ? { color: cat.colore } : {}}
-                      >
-                        {cat.nome}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            )}
+                      {cat.nome}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
         </View>
 
         {/* OPZIONI (Personale / Ricorrente) */}
@@ -272,7 +283,6 @@ export default function NuovaSpesaScreen() {
             />
           </View>
           
-          {/* MOSTRA IL SELETTORE SOLO SE LA SPESA E' RICORRENTE */}
           {isRicorrente && (
             <Controller
               control={control}
@@ -297,35 +307,7 @@ export default function NuovaSpesaScreen() {
 
         {/* SELEZIONE GRUPPO (Visibile solo se NON è personale) */}
         {!isPersonale && (
-          <View className="mb-8">
-            <Text className="text-slate-700 dark:text-slate-300 font-semibold mb-2 ml-1">Condividi con il Gruppo</Text>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false} 
-              contentContainerStyle={{ paddingRight: 20, paddingBottom: 4 }} 
-              className="flex-row"
-            >
-              {GRUPPI_MOCK.map((gruppo) => {
-                const isSelected = selectedGruppo === gruppo.id;
-                return (
-                  <TouchableOpacity
-                    key={gruppo.id}
-                    onPress={() => setValue('gruppo', gruppo.id)}
-                    className={`flex-row items-center px-4 py-2 rounded-xl mr-3 border ${
-                      isSelected 
-                        ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-500' 
-                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
-                    }`}
-                  >
-                    <Users size={16} color={isSelected ? "#1d4ed8" : "#64748b"} className="mr-2" />
-                    <Text className={`font-medium ${isSelected ? 'text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-400'}`}>
-                      {gruppo.nome}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
+          <DivisioneSpesaGruppoScreen watch={watch} setValue={setValue} />
         )}
 
         {/* BOTTONE SALVA */}

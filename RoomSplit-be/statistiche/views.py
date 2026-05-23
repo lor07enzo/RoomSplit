@@ -146,11 +146,11 @@ class SaldiView(APIView):
             bilancio_netto = pagato - dovuto
 
             saldi.append({
-                "utente_id": utente.id,
-                "nome": f"{utente.nome} {utente.cognome}",
-                "pagato_totale": pagato,
-                "quota_dovuta": dovuto,
-                "bilancio": bilancio_netto
+                "utente_id": str(utente.id),
+                "nome": f"{utente.nome} {utente.cognome or ''}".strip(),
+                "pagato_totale": float(pagato),
+                "quota_dovuta": float(dovuto),
+                "bilancio": float(bilancio_netto)
             })
 
         saldi = sorted(saldi, key=lambda x: x['bilancio'], reverse=True)

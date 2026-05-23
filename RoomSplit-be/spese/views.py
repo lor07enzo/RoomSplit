@@ -21,63 +21,74 @@ class GruppoSpesaViewSet(viewsets.ModelViewSet):
             Q(gruppo__membri__user=user)
         ).distinct().order_by('-created_at')
 
+    # Helper metod per pulire l'ID del documento proveniente dal Frontend
+    def _get_clean_documento_id(self, data):
+        val = data.get('documento_id', None)
+        if isinstance(val, list):
+            val = val[0] if val else None
+        if val in [None, "", "null", "undefined"]:
+            return None
+        return val
+
     @transaction.atomic 
     def create(self, request, *args, **kwargs):
-        quote_data = request.data.pop('quote', [])
+        gruppo_id = request.data.get('gruppo', None)
+        debitori_ids = request.data.pop('debitori', []) 
         documento_id = request.data.pop('documento_id', None)
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        
         gruppo_spesa = serializer.save(
-            user=request.user,
-            pagatore=request.user
+            user=request.user, 
+            pagatore=request.user,
+            gruppo_id=gruppo_id
         )
 
-        # Gestione delle Quote
-        if not gruppo_spesa.is_personale and quote_data:
-            somma_quote = 0
+        # Gestione Divisione automatica lato Django
+        if not gruppo_spesa.is_personale and debitori_ids:
+            totale_spesa = float(gruppo_spesa.importo)
+            numero_partecipanti = len(debitori_ids)
+            
+            # Quota base arrotondata
+            quota_singola = round(totale_spesa / numero_partecipanti, 2)
+            somma_calcolata = quota_singola * numero_partecipanti
+            differenza_arrotondamento = round(totale_spesa - somma_calcolata, 2)
 
-            for quota in quote_data:
-                importo_dovuto = float(quota.get('importo_dovuto', 0))
-                somma_quote += importo_dovuto
+            for index, debitore_id in enumerate(debitori_ids):
+                quota_effettiva = quota_singola
                 
+                # L'ultimo partecipante della lista si fa carico del centesimo residuo
+                if index == numero_partecipanti - 1:
+                    quota_effettiva = round(quota_singola + differenza_arrotondamento, 2)
+
                 Spesa.objects.create(
                     gruppo_spesa=gruppo_spesa,
-                    debitore_id=quota.get('debitore'),
-                    importo_dovuto=importo_dovuto
+                    debitore_id=debitore_id,
+                    importo_dovuto=quota_effettiva
                 )
 
-            # Controllo quadratura importi
-            if abs(somma_quote - float(gruppo_spesa.importo)) > 0.01:
-                # Se i conti non tornano, il transaction.atomic annullerà tutto automaticamente
-                return Response(
-                    {"errore": f"La somma delle quote ({somma_quote}€) non coincide con l'importo totale ({gruppo_spesa.importo}€)."},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        # Gestione Associazione Documento (Scontrino/Bolletta OCR)
+        # Gestione Associazione Documento Sicura
         if documento_id:
             try:
                 documento = Documento.objects.get(id=documento_id)
-                
                 if documento.gruppo_spesa is not None:
                      return Response(
-                        {"errore": "Questo documento è già stato associato a un'altra spesa."},
+                        {"errore": "Questo documento è già stato associato a un'altra spesa."}, 
                         status=status.HTTP_400_BAD_REQUEST
                     )
-                
                 documento.gruppo_spesa = gruppo_spesa
                 documento.status_ocr = Documento.StatoOCR.COMPLETATO 
                 documento.save()
-                
             except Documento.DoesNotExist:
                 return Response(
-                    {"errore": "Il documento specificato non esiste."},
+                    {"errore": "Il documento specificato non esiste."}, 
                     status=status.HTTP_404_NOT_FOUND
                 )
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
     
     @transaction.atomic
     def update(self, request, *args, **kwargs):
@@ -85,23 +96,41 @@ class GruppoSpesaViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
 
         data = request.data.copy() if hasattr(request.data, 'copy') else request.data
+        documento_id = self._get_clean_documento_id(data)
         
-        documento_id = data.pop('documento_id', None)
+        if 'documento_id' in data:
+            data.pop('documento_id')
 
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
-        if documento_id is not None:
-            vecchi_documenti = Documento.objects.filter(gruppo_spesa=instance)
+        vecchi_documenti = Documento.objects.filter(gruppo_spesa=instance)
 
-            if documento_id:
-                vecchi_documenti = vecchi_documenti.exclude(id=documento_id)
-            for doc in vecchi_documenti:
-                doc.delete()
-
-            if documento_id:
-                Documento.objects.filter(id=documento_id).update(gruppo_spesa=instance)
+        if documento_id:
+            try:
+                documento_nuovo = Documento.objects.get(id=documento_id)
+                
+                if documento_nuovo.gruppo_spesa is not None and documento_nuovo.gruppo_spesa != instance:
+                    return Response(
+                        {"errore": "Questo documento è già associato a un'altra spesa."},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                
+                vecchi_documenti.exclude(id=documento_id).delete()
+                
+                documento_nuovo.gruppo_spesa = instance
+                documento_nuovo.status_ocr = Documento.StatoOCR.COMPLETATO
+                documento_nuovo.save()
+                
+            except Documento.DoesNotExist:
+                return Response(
+                    {"errore": "Il documento configurato non esiste."},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+        else:
+            if 'documento_id' in request.data:
+                vecchi_documenti.delete()
 
         return Response(serializer.data)
 

@@ -21,6 +21,9 @@ export default function SpesaDetailScreen() {
   const spesa = spese.find(s => s.id === id);
 
   useEffect(() => {
+    setAllegato(null);
+    setLoadingDoc(true);
+
     if (id) {
       const fetchAllegato = async () => {
         try {
@@ -28,6 +31,7 @@ export default function SpesaDetailScreen() {
           setAllegato(doc);
         } catch (err) {
           console.error("Errore recupero allegato:", err);
+          setAllegato(null);
         } finally {
           setLoadingDoc(false);
         }

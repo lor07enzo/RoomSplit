@@ -26,6 +26,7 @@ export interface Gruppo {
   nome: string;
   codice_invito: string;
   created_at: string;
+  mio_ruolo?: string;
 }
 
 export interface Membro {
@@ -39,8 +40,8 @@ export interface Membro {
 export interface GruppoSpesa {
   id: string;
   nome: string;
-  User: User;
-  gruppo?: GruppoSpesa;
+  user: User;
+  gruppo?: Gruppo;
   pagatore?: User;
   categoria?: Categoria;
   importo: number;
@@ -49,6 +50,8 @@ export interface GruppoSpesa {
   saldata: boolean;
   is_ricorrente:boolean;
   prossimo_pagamento?: Date;
+  frequenza_numero: string;
+  frequenza_tipo: string;
   created_at: Date;
 }
 

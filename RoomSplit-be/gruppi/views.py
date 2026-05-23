@@ -20,6 +20,26 @@ class GruppoViewSet(viewsets.ModelViewSet):
         gruppo = serializer.save()
         Membro.objects.create(user=self.request.user, gruppo=gruppo, ruolo='admin')
 
+    # Recupera i membri del gruppo corrente
+    @action(detail=True, methods=['get'], url_path='membri')
+    def ottieni_membri(self, request, pk=None):
+        gruppo = self.get_object()
+        membri = gruppo.membri.all()
+        
+        dati_membri = []
+        for m in membri:
+            dati_membri.append({
+                "id": m.id,
+                "ruolo": m.ruolo,
+                "user": {
+                    "id": m.user.id,
+                    "email": m.user.email,
+                    "nome": m.user.nome,
+                    "cognome": m.user.cognome if hasattr(m.user, 'cognome') else ""
+                }
+            })
+        return Response(dati_membri, status=status.HTTP_200_OK)
+
     # Metodo per aggiungere un membro al gruppo tramite codice invito
     @action(detail=False, methods=['post'], url_path='join')
     def join_group(self, request):
@@ -31,12 +51,10 @@ class GruppoViewSet(viewsets.ModelViewSet):
             gruppo = Gruppo.objects.get(codice_invito=codice)
         except Gruppo.DoesNotExist:
             return Response({"errore": "Codice invito non valido."}, status=status.HTTP_404_NOT_FOUND)
-
-        # Controlla se l'utente è già nel gruppo
+        
         if Membro.objects.filter(user=request.user, gruppo=gruppo).exists():
             return Response({"errore": "Sei già membro di questo gruppo."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Aggiunge l'utente con ruolo 'membro'
         Membro.objects.create(user=request.user, gruppo=gruppo, ruolo='membro')
         return Response({
             "messaggio": f"Sei entrato con successo nel gruppo '{gruppo.nome}'",
@@ -52,13 +70,11 @@ class GruppoViewSet(viewsets.ModelViewSet):
         if not user_id_to_remove:
              return Response({"errore": "Devi specificare l'ID dell'utente da rimuovere."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Verifica chi sta facendo la richiesta
         try:
             current_member = Membro.objects.get(user=request.user, gruppo=gruppo)
         except Membro.DoesNotExist:
             return Response({"errore": "Non fai parte di questo gruppo."}, status=status.HTTP_403_FORBIDDEN)
 
-        # Solo un admin può rimuovere altri, ma un membro può lasciare il gruppo
         is_self_removal = str(request.user.id) == str(user_id_to_remove)
         if not is_self_removal and current_member.ruolo != 'admin':
             return Response({"errore": "Solo l'amministratore può rimuovere altri membri."}, status=status.HTTP_403_FORBIDDEN)
