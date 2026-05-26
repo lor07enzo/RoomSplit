@@ -37,7 +37,7 @@ export default function MobileNavigationLayout() {
   const NAV_ITEMS: NavItem[] = [
     { name: 'Dashboard', path: '/dashboard' as Href, icon: LayoutGrid },
     { name: 'Spese', path: '/spese' as Href, icon: ReceiptText },
-    { name: 'Dispensa', path: '/dispensa' as Href, icon: ShoppingCart },
+    { name: 'Liste Spesa', path: '/liste-spesa' as Href, icon: ShoppingCart },
     { name: 'Gruppi', path: '/gruppi' as Href, icon: Users },
   ];
 
@@ -48,6 +48,7 @@ export default function MobileNavigationLayout() {
   const getHeaderTitle = () => {
     if (pathname.startsWith('/gruppi/') || pathname.startsWith('/gruppo/')) return 'Info Gruppo';
     if (pathname.startsWith('/spesa/') || pathname.startsWith('/spese/')) return 'Info Spesa';
+    if (pathname.startsWith('/lista-spesa/') || pathname.startsWith('/liste-spesa/')) return 'Articoli';
     if (pathname === '/nuova-spesa') return params.editId ? 'Modifica' : 'Nuovo';
     if (pathname === '/profilo') return 'Profilo';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { GruppoSpesa } from '@/types/types';
-import { Users, User } from 'lucide-react-native';
+import { Users, User, DollarSign } from 'lucide-react-native';
 import { useSpese } from '@/context/SpeseContext';
 import { useRouter } from 'expo-router';
 
@@ -15,7 +15,7 @@ export default function SpesaItem({ spesa }: Props) {
   // Recupera l'icona e il colore in base al nome della categoria
   const nomeCategoria = spesa.categoria as unknown as string;
   const categoriaReale = categorie.find(c => c.nome === nomeCategoria) || { 
-    icona: '💰', 
+    icona: 'DollarSign', 
     colore: '#cbd5e1' 
   };
 
@@ -36,7 +36,11 @@ export default function SpesaItem({ spesa }: Props) {
           className="w-12 h-12 rounded-full items-center justify-center mr-4"
           style={{ backgroundColor: `${categoriaReale.colore}20` }}
         >
-          <Text className="text-xl">{categoriaReale.icona}</Text>
+          {categoriaReale.icona === 'DollarSign' ? (
+            <DollarSign size={24} color={categoriaReale.colore} />
+          ) : (
+            <Text className="text-xl">{categoriaReale.icona}</Text>
+          )}
         </View>
 
         <View className="flex-1">

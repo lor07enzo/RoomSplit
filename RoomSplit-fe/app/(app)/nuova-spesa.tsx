@@ -10,6 +10,7 @@ import { documentiService } from '@/services/documenti';
 import RicorrenzaSelector from '@/components/spese/RicorrenzaSelector';
 import { useGruppi } from '@/context/GruppiContext';
 import DivisioneSpesaGruppoScreen from '@/components/spese/DivisioneSpesaGruppo';
+import { useListaSpesa } from '@/context/ListaSpesaContext';
 
 
 interface FormDataSpese {
@@ -27,9 +28,17 @@ interface FormDataSpese {
 
 export default function NuovaSpesaScreen() {
   const router = useRouter();
-  const { editId } = useLocalSearchParams<{ editId?: string }>();
+  const { editId, nome, descrizione, gruppo, is_personale, fromListaId } = useLocalSearchParams<{ 
+    editId?: string;
+    nome?: string;
+    descrizione?: string;
+    gruppo?: string;
+    is_personale?: string;
+    fromListaId?: string; 
+  }>();
   const { addSpesa, updateSpesa, spese, categorie, isLoadingCategorie } = useSpese(); 
   const { gruppi, fetchGruppi } = useGruppi();
+  const { svuotaArticoliPresi } = useListaSpesa();
   const [fetchedDocument, setFetchedDocument] = useState<any | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [documentoId, setDocumentoId] = useState<string | null>(null);
@@ -93,6 +102,20 @@ export default function NuovaSpesaScreen() {
     }
   }, [editId, spese]);
 
+  useEffect(() => {
+    if (!editId) { 
+      if (nome) setValue('nome', nome);
+      if (descrizione) setValue('descrizione', descrizione);
+      if (is_personale) {
+        const personaleBool = is_personale === 'true';
+        setValue('is_personale', personaleBool);
+        if (!personaleBool && gruppo) {
+          setValue('gruppo', gruppo);
+        }
+      }
+    }
+  }, [editId, nome, descrizione, gruppo, is_personale]);
+
   const handleDocumentoCaricato = (doc: any) => {
     if (!doc) {
       setDocumentoId(null);
@@ -124,6 +147,14 @@ export default function NuovaSpesaScreen() {
       success = await updateSpesa(editId, payload as unknown as Partial<GruppoSpesa>);
     } else {
       success = await addSpesa(payload as unknown as Partial<GruppoSpesa>);
+    }
+
+    if (success && fromListaId) {
+      try {
+        await svuotaArticoliPresi(fromListaId);
+      } catch (err) {
+        console.error("Errore nello svuotamento automatico post-checkout:", err);
+      }
     }
 
     setIsSubmitting(false);

@@ -2,7 +2,7 @@ import { ScrollView, TouchableOpacity, View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
-import { ArrowUpRight, Bell, Plus, Receipt } from 'lucide-react-native';
+import { ArrowUpRight, Bell, Plus, Receipt, Zap, ShoppingCart } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
 export default function DashboardScreen() {
@@ -88,7 +88,7 @@ export default function DashboardScreen() {
                         {/* Item 1 */}
                         <View className="flex-row items-center mb-4">
                             <View className="bg-orange-100 p-3 rounded-full mr-4">
-                                <Text className="text-orange-600 text-lg">⚡</Text>
+                                <Zap size={20} color="#ea580c" />
                             </View>
                             <View className="flex-1">
                                 <Text className="font-bold text-slate-900 dark:text-white">Utenze</Text>
@@ -99,7 +99,7 @@ export default function DashboardScreen() {
                         {/* Item 2 */}
                         <View className="flex-row items-center">
                             <View className="bg-green-100 p-3 rounded-full mr-4">
-                                <Text className="text-green-600 text-lg">🛒</Text>
+                                <ShoppingCart size={20} color="#16a34a" />
                             </View>
                             <View className="flex-1">
                                 <Text className="font-bold text-slate-900 dark:text-white">Spesa</Text>

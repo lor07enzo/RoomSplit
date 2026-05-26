@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { useSpese } from '@/context/SpeseContext';
-import { Calendar, AlignLeft, Users, User, Repeat, Edit, Trash2, Share2, ExternalLink, FileText, Paperclip } from 'lucide-react-native';
+import { Calendar, AlignLeft, Users, User, Repeat, Edit, Trash2, Share2, ExternalLink, FileText, Paperclip, DollarSign } from 'lucide-react-native';
 import { documentiService } from '@/services/documenti';
 import * as Linking from 'expo-linking';
 import * as FileSystem from 'expo-file-system';
@@ -53,7 +53,7 @@ export default function SpesaDetailScreen() {
   const categoriaReale = categorie.find(c => c.nome === nomeCategoria) || { 
     id: 'fallback',
     nome: nomeCategoria || 'Altro',
-    icona: '💰', colore: '#94a3b8' 
+    icona: 'DollarSign', colore: '#94a3b8' 
   };
 
   const dataCreazione = new Date(spesa.created_at || new Date()).toLocaleDateString('it-IT', {

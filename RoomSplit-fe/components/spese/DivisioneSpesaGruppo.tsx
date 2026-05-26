@@ -1,4 +1,3 @@
-// components/spese/SezioneCondivisioneGruppo.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { UseFormWatch, UseFormSetValue } from 'react-hook-form';
@@ -7,12 +6,12 @@ import { GruppiService } from '@/services/gruppi';
 import { Membro } from '@/types/types';
 import { Users, CheckCircle2, Circle } from 'lucide-react-native';
 
-interface SezioneCondivisioneProps {
+interface DivisioneSpesaProps {
   watch: UseFormWatch<any>;
   setValue: UseFormSetValue<any>;
 }
 
-export default function SezioneCondivisioneGruppo({ watch, setValue }: SezioneCondivisioneProps) {
+export default function DivisioneSpesaGruppoScreen({ watch, setValue }: DivisioneSpesaProps) {
   const { gruppi, fetchGruppi } = useGruppi();
   const [membri, setMembri] = useState<Membro[]>([]);
   const [loadingMembri, setLoadingMembri] = useState(false);

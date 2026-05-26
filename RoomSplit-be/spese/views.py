@@ -160,6 +160,14 @@ class ListaSpesaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+    
+    # Azione personalizzata per svuotare gli articoli "presi" da una lista spesa
+    @action(detail=True, methods=['post'], url_path='svuota-presi')
+    def svuota_presi(self, request, pk=None):
+        lista = self.get_object()
+        lista.articoli.filter(preso_da__isnull=False).delete()
+        
+        return Response({"detail": "Articoli acquistati rimossi dalla lista."}, status=status.HTTP_200_OK)
 
 
 class ArticoloViewSet(viewsets.ModelViewSet):
@@ -168,7 +176,6 @@ class ArticoloViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        # NOTA: Assicurati che "lista_spesa" sia il nome corretto del related_name o del field
         return Articolo.objects.filter(
             Q(lista_spesa__user=user) | 
             Q(lista_spesa__gruppo__membri__user=user)
@@ -180,19 +187,16 @@ class ArticoloViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='toggle-check')
     def toggle_check(self, request, pk=None):
         articolo = self.get_object()
+        segna_come_preso = request.data.get('segna_come_preso', False)
         
-        if articolo.preso_da:
-            articolo.preso_da = None
-            messaggio = "Articolo deselezionato."
-        else:
+        if segna_come_preso:
             articolo.preso_da = request.user
-            messaggio = "Articolo inserito nel carrello!"
-            
+        else:
+            articolo.preso_da = None
         articolo.save()
-        return Response({
-            "messaggio": messaggio, 
-            "preso_da": articolo.preso_da.id if articolo.preso_da else None
-        }, status=status.HTTP_200_OK)
+
+        serializer = self.get_serializer(articolo)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
 # ReadOnly perché l'app mobile deve solo leggerle
 class CategoriaViewSet(viewsets.ReadOnlyModelViewSet):
