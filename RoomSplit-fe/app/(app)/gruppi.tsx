@@ -103,7 +103,7 @@ export default function GruppiScreen() {
           renderItem={({ item }) => (
             <TouchableOpacity
               // FISSAATO: Corretto il path del router per puntare a /gruppi/[id] invece di /gruppo/[id]
-              onPress={() => router.push(`/gruppi/${item.id}` as any)}
+              onPress={() => router.push(`/gruppo/${item.id}` as any)}
               className="bg-white dark:bg-slate-800 p-4 rounded-2xl mb-3 border border-slate-100 dark:border-slate-700 flex-row items-center justify-between shadow-sm active:opacity-80"
             >
               <View className="flex-row items-center flex-1 pr-2">

@@ -20,9 +20,14 @@ class UserDetailView(APIView):
 
     def get(self, request):
         user = request.user
+
+        # Estrae l'URL di Cloudinary (se l'avatar è presente)
+        avatar_url = user.avatar.url if user.avatar else None
+
         return Response({
             "id": user.id,
             "email": user.email,
             "nome": getattr(user, 'nome', ''),
-            "cognome": getattr(user, 'cognome', '')
+            "cognome": getattr(user, 'cognome', ''),
+            "avatar": avatar_url
         })

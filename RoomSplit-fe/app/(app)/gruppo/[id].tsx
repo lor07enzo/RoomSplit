@@ -6,7 +6,7 @@ import { useGruppi } from '@/context/GruppiContext';
 import { useAuth } from '@/context/AuthContext';
 import { GruppiService } from '@/services/gruppi';
 import { ListaSpesa, Membro } from '@/types/types';
-import { Crown, LogOut, Trash2, ArrowRight, ReceiptText, Copy, Check, ChevronRight, ShoppingBag, Share2, ChevronUp, ChevronDown } from 'lucide-react-native';
+import { Crown, LogOut, Trash2, ArrowRight, ReceiptText, Copy, Check, ChevronRight, ShoppingBag, Share2, ChevronUp, ChevronDown, User } from 'lucide-react-native';
 import { useSpese } from '@/context/SpeseContext';
 import { useStatistiche } from '@/context/StatisticheContext';
 import * as Clipboard from 'expo-clipboard';
@@ -289,11 +289,16 @@ export default function GruppoDetailScreen() {
             {membri.map((membro) => {
               const isMe = membro.user.id === currentUser?.id;
               const membroAdmin = membro.ruolo === 'admin';
+              const avatarMembro = membro.user.avatar || membro.user.nome ? membro.user.nome.charAt(0).toUpperCase() : null;
               return (
                 <View key={membro.id} className="bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 p-4 rounded-xl flex-row items-center justify-between shadow-sm mb-2">
                   <View className="flex-row items-center">
                     <View className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 justify-center items-center mr-3">
-                      <Text className="text-slate-700 dark:text-slate-300 font-bold">{membro.user.nome[0].toUpperCase()}</Text>
+                      {avatarMembro ? (
+                        <Text className="text-slate-700 dark:text-slate-300 font-bold">{avatarMembro}</Text>
+                      ) : (
+                        <User size={20} color="#64748b" />
+                      )}
                     </View>
                     <View>
                       <Text className="text-slate-900 dark:text-white font-semibold text-sm">{membro.user.nome} {membro.user.cognome || ''} {isMe && '(Tu)'}</Text>

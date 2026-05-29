@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, Pressable, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, Pressable, ScrollView, Image } from 'react-native';
 import { Slot, useRouter, usePathname, useGlobalSearchParams, Href, Redirect } from 'expo-router';
 import { LayoutGrid, ReceiptText, ShoppingCart, Users, User, Bell, Check, ChevronLeft } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
@@ -95,10 +95,22 @@ export default function MobileNavigationLayout() {
 
           {/* PROFILO */}
           <TouchableOpacity 
-            className="bg-slate-100 dark:bg-slate-700 p-2 rounded-full"
+            className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-700 border-2 border-transparent active:opacity-70 justify-center items-center"
             onPress={() => router.push('/profilo' as Href)} 
           >
-            <User size={20} color="#64748b" />
+            {user?.avatar ? (
+              <Image 
+                source={{ uri: user.avatar }} 
+                className="w-full h-full"
+                resizeMode="cover"
+              />
+            ) : user?.nome ? (
+              <Text className="text-blue-600 dark:text-blue-400 font-bold text-lg">
+                {user.nome.charAt(0).toUpperCase()}
+              </Text>
+            ) : (
+              <User size={20} color="#64748b" />
+            )}
           </TouchableOpacity>
         </View>
       </View>

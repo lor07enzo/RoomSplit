@@ -83,7 +83,7 @@ export default function FormCreaLista({ onClose }: FormCreaListaProps) {
                     }`}
                   >
                     <Text className={`font-medium text-sm ${isSelected ? 'text-white' : 'text-gray-700'}`}>
-                      <House/> {g.nome}
+                      {g.nome}
                     </Text>
                   </Pressable>
                 );
