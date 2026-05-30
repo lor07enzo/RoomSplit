@@ -62,12 +62,6 @@ Per ogni spesa è possibile:
 - Storico delle transazioni e rimborsi
 
 ### 📊 Statistiche
-**Settimanali** (opzionale)
-- Totale speso per categoria
-- Quota pro-capite della settimana
-- Confronto con la settimana precedente
-- Spesa maggiore della settimana
-
 **Mensili:**
 - Totale speso per categoria
 - Quota pro-capite del mese
@@ -117,6 +111,7 @@ Per ogni spesa è possibile:
 | **PostgreSQL** | 17 | Database relazionale principale |
 | **Cloudinary** | latest | Cloud storage per i file caricati (PDF, immagini) |
 | **django-cloudinary-storage** | latest | Integrazione storage Django-Cloudinary |
+| **django-background-task** | latest | Task asincrono per caricamento file in background |
 | **pdfplumber** | latest | Estrazione testo da PDF (Lettura in RAM) |
 | **pytesseract** | latest | OCR per immagini scansionate |
 | **Pillow** | latest | Manipolazione immagini pre-OCR |
@@ -138,7 +133,8 @@ Per ogni spesa è possibile:
 ### Infrastruttura e Deploy
 | Tecnologia | Utilizzo |
 |---|---|
-| **Railway** o **Render** | Hosting backend e DB |
+| **Docker** | Tecnologia di conteinerizzazione |
+| **Render** | Hosting backend e DB |
 | **EAS (Expo Application Services)** | Build e deploy negli store (App Store / Google Play) |
 | **Cloudinary** | Storage per i file caricati (PDF, immagini) |
 | **GitHub** | Version control e CI/CD |
@@ -314,7 +310,7 @@ GET    /api/v1/export/excel/          → Export Excel
 - [x] Download file in RAM ed elaborazione sicura
 - [x] Integrazione pdfplumber per PDF nativi
 - [x] Integrazione pytesseract (OCR) con pattern matching intelligente
-- [ ] Sviluppo UI Frontend per conferma importo estratto
+- [x] Sviluppo UI Frontend per conferma importo estratto
 
 ### Fase 4 — Statistiche e Dashboard
 - [x] Sviluppo API Backend: Statistiche mensili e annuali
@@ -335,4 +331,4 @@ GET    /api/v1/export/excel/          → Export Excel
 
 ---
 
-*Documento generato per progetto scolastico professionale — Stack: Django · React Native · PostgreSQL*
+*Documentazione progetto RoomSplit sviluppato da Lorenzo Pelone*

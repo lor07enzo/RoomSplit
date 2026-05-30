@@ -6,10 +6,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Q
 from .models import Documento
-from spese.models import GruppoSpesa
 from .serializers import DocumentoSerializer
 from .services import estrai_dati_bolletta
-import threading
+from .tasks import task_estrai_dati_bolletta
+
 
 class DocumentoViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentoSerializer
@@ -43,6 +43,5 @@ class DocumentoViewSet(viewsets.ModelViewSet):
             tipo_file=tipo_definitivo
         )
 
-        # Avvia l'estrazione OCR in background!
-        thread = threading.Thread(target=estrai_dati_bolletta, args=(documento.id,))
-        thread.start()
+        #Accoda il task nel database per l'esecuzione asincrona
+        task_estrai_dati_bolletta(str(documento.id))

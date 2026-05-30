@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'cloudinary_storage',
     'cloudinary',
+    'background_task',
     'users',
     'gruppi',
     'spese',
