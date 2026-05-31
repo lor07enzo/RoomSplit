@@ -4,8 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models.functions import ExtractMonth
 from django.db.models import Sum, F
 from django.utils import timezone
-from spese.models import GruppoSpesa, Spesa
-from gruppi.models import Membro
+from spese.models import GruppoSpesa
 import uuid 
 
 class StatisticheMensiliView(APIView):
@@ -105,89 +104,3 @@ class StatisticheAnnualiView(APIView):
             ]
         })
     
-# Gestisce i saldi di ogni utente all'interno di un gruppo
-class SaldiView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, *args, **kwargs):
-        gruppo_id_str = request.query_params.get('gruppo_id')
-        
-        if not gruppo_id_str:
-            return Response({"errore": "gruppo_id è obbligatorio"}, status=400)
-
-        try:
-            gruppo_id = uuid.UUID(gruppo_id_str)
-        except ValueError:
-            return Response({"errore": "gruppo_id non è un UUID valido"}, status=400)
-
-        # Recupera tutti i membri del gruppo
-        membri = Membro.objects.filter(gruppo_id=gruppo_id).select_related('user')
-        
-        saldi = []
-
-        for membro in membri:
-            utente = membro.user
-
-            # Somma le spese dove l'utente è il pagatore
-            pagato = GruppoSpesa.objects.filter(
-                gruppo_id=gruppo_id,
-                pagatore=utente,
-                is_personale=False
-            ).aggregate(tot=Sum('importo'))['tot'] or 0
-
-            # Somma le quote (Spesa) a carico dell'utente all'interno di questo gruppo
-            dovuto = Spesa.objects.filter(
-                gruppo_spesa__gruppo_id=gruppo_id,
-                debitore=utente
-            ).aggregate(tot=Sum('importo_dovuto'))['tot'] or 0
-
-            #TODO: verificare la necessità di aggiungere la logica dei rimborsi
-
-            bilancio_netto = pagato - dovuto
-
-            saldi.append({
-                "utente_id": str(utente.id),
-                "nome": f"{utente.nome} {utente.cognome or ''}".strip(),
-                "pagato_totale": float(pagato),
-                "quota_dovuta": float(dovuto),
-                "bilancio": float(bilancio_netto)
-            })
-
-        saldi = sorted(saldi, key=lambda x: x['bilancio'], reverse=True)
-
-        return Response({
-            "gruppo_id": gruppo_id,
-            "saldi": saldi
-        })
-    
-# Restituisce il riepilogo delle spese TOTALI di un utente (Private + Quote Gruppo)
-class StatistichePersonaliView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, *args, **kwargs):
-        user = request.user
-        mese = int(request.query_params.get('mese', timezone.now().month))
-        anno = int(request.query_params.get('anno', timezone.now().year))
-
-        # Spese puramente personali
-        totale_personale = GruppoSpesa.objects.filter(
-            user=user,
-            is_personale=True,
-            created_at__year=anno,
-            created_at__month=mese
-        ).aggregate(tot=Sum('importo'))['tot'] or 0
-
-        # Quote dovute nelle spese di gruppo (Tabella Spesa)
-        totale_quote_gruppo = Spesa.objects.filter(
-            debitore=user,
-            gruppo_spesa__is_personale=False,
-            gruppo_spesa__created_at__year=anno,
-            gruppo_spesa__created_at__month=mese
-        ).aggregate(tot=Sum('importo_dovuto'))['tot'] or 0
-
-        return Response({
-            "mese": mese,
-            "spese_private_pure": totale_personale,
-            "tua_parte_spese_gruppo": totale_quote_gruppo,
-            "totale_uscita_mensile": totale_personale + totale_quote_gruppo
-        })

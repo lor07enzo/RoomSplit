@@ -1,12 +1,6 @@
 import { api } from "@/lib/api";
 
 export const StatisticheService = {
-    getSaldiGruppo: async (gruppoId: string) => {
-        const response = await api.get('/v1/statistiche/gruppo/saldi/', {
-            params: { gruppo_id: gruppoId }
-        });
-        return response.data;
-    },
   
     // Mappa le statistiche mensili dei gruppi
     getStatisticheMensili: async (gruppoId: string, mese?: number, anno?: number) => {

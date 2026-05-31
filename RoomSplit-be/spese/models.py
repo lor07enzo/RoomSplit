@@ -33,7 +33,6 @@ class GruppoSpesa(models.Model):
     importo = models.DecimalField(max_digits=10, decimal_places=2)
     descrizione = models.TextField(blank=True)
     is_personale = models.BooleanField(default=False)
-    saldata = models.BooleanField(default=False)
     is_ricorrente = models.BooleanField(default=False)
     frequenza_numero = models.IntegerField(default=1, null=True, blank=True)
     frequenza_tipo = models.CharField(choices=FREQUENZA_CHOICES, max_length=20, default="mesi", null=True, blank=True)

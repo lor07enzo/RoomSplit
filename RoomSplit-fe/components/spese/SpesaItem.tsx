@@ -67,14 +67,6 @@ export default function SpesaItem({ spesa }: Props) {
           <Text className="font-bold text-slate-900 dark:text-white text-lg">
             €{Number(spesa.importo).toFixed(2)}
           </Text>
-          
-          {!spesa.is_personale && (
-            spesa.saldata ? (
-              <Text className="text-green-500 text-[10px] font-bold uppercase mt-1">Saldata</Text>
-            ) : (
-              <Text className="text-orange-500 text-[10px] font-bold uppercase mt-1">Pendente</Text>
-            )
-          )}
         </View>
       </View>
     </TouchableOpacity>

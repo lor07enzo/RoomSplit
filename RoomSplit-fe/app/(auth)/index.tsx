@@ -1,5 +1,5 @@
 import { View, Text } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { CheckCircle2, AlertCircle } from 'lucide-react-native';
 
 const loginSchema = z.object({
@@ -47,14 +46,13 @@ export default function LoginScreen() {
     }
   };
 
-
   return (
-    <View className="flex-1 justify-center items-center bg-gray-50 p-4">
+    <View className="flex-1 justify-center items-center bg-slate-50 dark:bg-slate-900 p-4">
       
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">RoomSplit</CardTitle>
-          <CardDescription className="text-center">
+          <CardTitle className="text-2xl font-bold text-center dark:text-white">RoomSplit</CardTitle>
+          <CardDescription className="text-center dark:text-slate-400">
             Bentornato! Accedi al tuo appartamento.
           </CardDescription>
         </CardHeader>
@@ -63,35 +61,40 @@ export default function LoginScreen() {
 
           {/* ALERT DI SUCCESSO */}
           {successMessage ? (
-            <Alert className="border-green-500 bg-green-50 dark:bg-green-900/20">
-              {/* Riga flessibile per allineare icona e titolo */}
-              <View className="flex-row items-center gap-2 mb-1">
-                <CheckCircle2 size={20} color="#15803d" />
-                <AlertTitle className="text-green-700 dark:text-green-400 m-0">
-                  Successo
-                </AlertTitle>
+            <View className="bg-emerald-50 border border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/30 rounded-xl p-3 flex-row items-start shadow-sm">
+              {/* flex-shrink-0 impedisce all'icona di schiacciarsi se il testo è lungo */}
+              <CheckCircle2 size={20} color="#10b981" className="mt-0.5 flex-shrink-0" />
+              
+              {/* flex-1 permette al testo di occupare il resto dello spazio e andare a capo */}
+              <View className="flex-1 ml-3">
+                <Text className="text-emerald-800 dark:text-emerald-400 font-bold text-sm">
+                  Accesso Riuscito
+                </Text>
+                <Text className="text-emerald-600 dark:text-emerald-300 mt-0.5 text-xs leading-4">
+                  {successMessage}
+                </Text>
               </View>
-              <AlertDescription className="text-green-600 dark:text-green-300 mt-1">
-                {successMessage}
-              </AlertDescription>
-            </Alert>
+            </View>
           ) : null}
 
-          {/* ALERT DI ERRORE */}
+          {/* ALERT DI ERRORE OTTIMIZZATO */}
           {serverError ? (
-             <Alert variant="destructive">
-               <View className="flex-row items-center gap-2 mb-1">
-                 <AlertCircle size={20} color="#dc2626" />
-                 <AlertTitle className="m-0">Errore</AlertTitle>
+             <View className="bg-red-50 border border-red-200 dark:bg-red-500/10 dark:border-red-500/30 rounded-xl p-3 flex-row items-start shadow-sm">
+               <AlertCircle size={20} color="#ef4444" className="mt-0.5 flex-shrink-0" />
+               
+               <View className="flex-1 ml-3">
+                 <Text className="text-red-800 dark:text-red-400 font-bold text-sm">
+                   Impossibile Accedere
+                 </Text>
+                 <Text className="text-red-600 dark:text-red-300 mt-0.5 text-xs leading-4">
+                   {serverError}
+                 </Text>
                </View>
-               <AlertDescription className="mt-1">
-                 {serverError}
-               </AlertDescription>
-             </Alert>
+             </View>
           ) : null}
 
           <View className="space-y-2">
-            <Label nativeID="email">Email</Label>
+            <Label nativeID="email" className="dark:text-slate-300">Email</Label>
             <Controller
               control={control}
               name="email"
@@ -103,14 +106,15 @@ export default function LoginScreen() {
                   autoCapitalize="none"
                   value={value} 
                   onChangeText={onChange} 
+                  className="dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 />
               )}
             />
-            {errors.email && <Text className="text-red-500 text-xs">{errors.email.message}</Text>}
+            {errors.email && <Text className="text-red-500 dark:text-red-400 text-xs">{errors.email.message}</Text>}
           </View>
           
           <View className="space-y-2">
-            <Label nativeID="password">Password</Label>
+            <Label nativeID="password" className="dark:text-slate-300">Password</Label>
             <Controller
               control={control}
               name="password"
@@ -121,15 +125,20 @@ export default function LoginScreen() {
                   secureTextEntry 
                   value={value} 
                   onChangeText={onChange} 
+                  className="dark:bg-slate-800 dark:border-slate-700 dark:text-white"
                 />
               )}
             />
-            {errors.password && <Text className="text-red-500 text-xs">{errors.password.message}</Text>}
+            {errors.password && <Text className="text-red-500 dark:text-red-400 text-xs">{errors.password.message}</Text>}
           </View>
         </CardContent>
         
         <CardFooter className="flex-col gap-3">
-          <Button className="w-full" onPress={handleSubmit(onSubmit)} disabled={isLoading}>
+          <Button 
+            className="w-full bg-blue-600 dark:bg-blue-500 active:bg-blue-700 dark:active:bg-blue-600 py-3 rounded-xl shadow-sm" 
+            onPress={handleSubmit(onSubmit)} 
+            disabled={isLoading}
+          >
             <Text className="text-white font-semibold">
               {isLoading ? 'Accesso in corso...' : 'Accedi'}
             </Text>
@@ -141,15 +150,15 @@ export default function LoginScreen() {
             onPress={() => router.replace('/(auth)/register')}
             disabled={isLoading}
           >
-            <Text className="text-gray-600">
-              Non hai un account? <Text className="underline font-bold">Registrati</Text>
+            <Text className="text-slate-600 dark:text-slate-400">
+              Non hai un account? <Text className="underline font-bold text-slate-900 dark:text-white">Registrati</Text>
             </Text>
           </Button>
 
           <View className="flex-row items-center my-4">
-            <View className="flex-1 h-px bg-gray-300 dark:bg-gray-700" style={{ height: 1, backgroundColor: '#D1D5DB' }} />
-            <Text className="mx-4 text-xs font-semibold text-gray-500 uppercase">Oppure</Text>
-            <View className="flex-1 h-px bg-gray-300 dark:bg-gray-700" style={{ height: 1, backgroundColor: '#D1D5DB' }} />
+            <View className="flex-1 h-[1px] bg-slate-300 dark:bg-slate-700" />
+            <Text className="mx-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Oppure</Text>
+            <View className="flex-1 h-[1px] bg-slate-300 dark:bg-slate-700" />
           </View>
 
           <SocialConnections />

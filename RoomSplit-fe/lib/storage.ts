@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 
 const ACCESS_TOKEN_KEY = 'roomsplit_access_token';
 const REFRESH_TOKEN_KEY = 'roomsplit_refresh_token';
+const THEME_KEY = 'roomsplit_theme';
 
 export const tokenStorage = {
   // Salva ENTRAMBI i token (usato al momento del Login)
@@ -50,6 +51,33 @@ export const tokenStorage = {
     } else {
       await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
       await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
+    }
+  }
+};
+
+// Storage per la preferenza del tema (light/dark)
+export const themeStorage = {
+  async saveTheme(theme: 'light' | 'dark') {
+    try {
+      if (Platform.OS === 'web') {
+        localStorage.setItem(THEME_KEY, theme);
+      } else {
+        await SecureStore.setItemAsync(THEME_KEY, theme);
+      }
+    } catch (error) {
+      console.error("Errore salvataggio tema:", error);
+    }
+  },
+
+  async getTheme(): Promise<'light' | 'dark' | null> {
+    try {
+      if (Platform.OS === 'web') {
+        return localStorage.getItem(THEME_KEY) as 'light' | 'dark' | null;
+      }
+      return (await SecureStore.getItemAsync(THEME_KEY)) as 'light' | 'dark' | null;
+    } catch (error) {
+      console.error("Errore recupero tema:", error);
+      return null;
     }
   }
 };

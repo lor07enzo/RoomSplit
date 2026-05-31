@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Switch, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Switch, ActivityIndicator, Dimensions } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { useSpese } from '@/context/SpeseContext'; 
-import { Euro, AlignLeft, Check, Type, Users } from 'lucide-react-native';
-import { Documento, GruppoSpesa } from '@/types/types';
+import { Euro, AlignLeft, Type } from 'lucide-react-native';
 import UploadDocumento from '@/components/spese/UploadDocumento';
 import { documentiService } from '@/services/documenti';
 import RicorrenzaSelector from '@/components/spese/RicorrenzaSelector';
 import { useGruppi } from '@/context/GruppiContext';
 import DivisioneSpesaGruppoScreen from '@/components/spese/DivisioneSpesaGruppo';
 import { useListaSpesa } from '@/context/ListaSpesaContext';
+import { CreaSpesaPayload } from '@/services/spese';
 
 
 interface FormDataSpese {
@@ -125,8 +125,30 @@ export default function NuovaSpesaScreen() {
     setDocumentoId(doc.id);
     
     if ( doc && doc.importo_estratto) {
-      setValue('importo', doc.importo_estratto.toString());
+      // Formatta l'importo per assicurare i decimali se provengono dall'OCR
+      setValue('importo', parseFloat(doc.importo_estratto).toFixed(2));
     }
+  };
+
+  const formatImporto = (text: string) => {
+    // Sostituisce la virgola con il punto per standardizzare
+    let formattedText = text.replace(',', '.');
+    
+    // Rimuove qualsiasi carattere non numerico o non punto
+    formattedText = formattedText.replace(/[^0-9.]/g, '');
+    
+    // Assicura che ci sia solo un punto decimale
+    const parts = formattedText.split('.');
+    if (parts.length > 2) {
+      formattedText = parts[0] + '.' + parts.slice(1).join('');
+    }
+    
+    // Limita a massimo due decimali
+    if (parts.length === 2 && parts[1].length > 2) {
+      formattedText = parts[0] + '.' + parts[1].substring(0, 2);
+    }
+    
+    return formattedText;
   };
 
   const onSubmit = async (data: FormDataSpese) => {
@@ -134,7 +156,7 @@ export default function NuovaSpesaScreen() {
     
     const payload = {
       ...data,
-      importo: parseFloat(data.importo.replace(',', '.')),
+      importo: parseFloat(data.importo),
       gruppo: data.is_personale ? null : data.gruppo,
       documento_id: documentoId || null,
       frequenza_valore: data.is_ricorrente ? parseInt(data.frequenza_numero) : null,
@@ -144,9 +166,9 @@ export default function NuovaSpesaScreen() {
 
     let success;
     if (editId) {
-      success = await updateSpesa(editId, payload as unknown as Partial<GruppoSpesa>);
+      success = await updateSpesa(editId, payload as unknown as CreaSpesaPayload);
     } else {
-      success = await addSpesa(payload as unknown as Partial<GruppoSpesa>);
+      success = await addSpesa(payload as unknown as CreaSpesaPayload);
     }
 
     if (success && fromListaId) {
@@ -169,85 +191,94 @@ export default function NuovaSpesaScreen() {
   };
 
   return (
-    <ScrollView className="flex-1 bg-slate-50 dark:bg-slate-900" keyboardShouldPersistTaps="handled">
-      <View className="p-4 pt-8 pb-12">
+    <ScrollView 
+      className="flex-1 bg-slate-50 dark:bg-slate-900" 
+      keyboardShouldPersistTaps="handled"
+    >
+      {/* Contenitore limitato in larghezza per tablet, centrato orizzontalmente */}
+      <View className="w-full max-w-2xl mx-auto p-4 pt-8 pb-12">
         
         {/* IMPORTO */}
-        <View className="mb-10 w-full items-center">
-          <Text className="text-slate-500 dark:text-slate-400 font-medium mb-3">Importo Totale</Text>
+        <View className="mb-10 w-full items-center bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
+          <Text className="text-slate-500 dark:text-slate-400 font-bold tracking-widest uppercase text-xs mb-4">Importo Spesa</Text>
           
-          <View className="flex-row items-center justify-center border-b-2 border-blue-500 pb-2 min-w-[150px]">
-            <View className="mr-2">
-              <Euro size={36} color="#3b82f6" />
+          {/* Aggiunto w-full per forzare i limiti del contenitore */}
+          <View className="flex-row items-center justify-center w-full px-2">
+            {/* L'icona ha flex-shrink-0 per non essere mai schiacciata */}
+            <View className="mr-1 mt-1 flex-shrink-0">
+              <Euro size={40} color="#3b82f6" />
             </View>
             
             <Controller
               control={control}
-              rules={{ required: "L'importo è obbligatorio", pattern: /^[0-9.,]+$/ }}
+              rules={{ required: "L'importo è obbligatorio" }}
               name="importo"
               render={({ field: { onChange, onBlur, value } }) => (
                 <TextInput
-                  className="text-5xl font-bold text-slate-900 dark:text-white text-center min-w-[100px]"
+                  className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white text-center py-2 flex-shrink max-w-[80%]"
                   placeholder="0.00"
-                  placeholderTextColor="#cbd5e1"
+                  placeholderTextColor="#e2e8f0"
                   keyboardType="decimal-pad"
                   onBlur={onBlur}
-                  onChangeText={onChange}
+                  onChangeText={(text) => onChange(formatImporto(text))}
                   value={value}
                   maxLength={10} 
                 />
               )}
             />
           </View>
-          {errors.importo && <Text className="text-red-500 text-xs mt-2">{errors.importo.message}</Text>}
+          {errors.importo && <Text className="text-red-500 font-medium mt-3">{errors.importo.message}</Text>}
         </View>
         
         {/* DOCUMENTO */}
         <UploadDocumento onDocumentUploaded={handleDocumentoCaricato} initialDocument={fetchedDocument} />
 
-        {/* TITOLO SPESA */}
-        <View className="mb-4">
-          <Text className="text-slate-700 dark:text-slate-300 font-semibold mb-2 ml-1">Titolo</Text>
-          <View className="bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-700 flex-row items-center">
-            <Type size={20} color="#94a3b8" />
-            <Controller
-              control={control}
-              rules={{ required: "Il titolo è obbligatorio" }}
-              name="nome"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  className="flex-1 ml-3 text-slate-900 dark:text-white text-base"
-                  placeholder="Es. Spesa Esselunga"
-                  placeholderTextColor="#94a3b8"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                />
-              )}
-            />
+        {/* GRIGLIA PER TABLET */}
+        <View className="md:flex-row md:gap-4">
+          {/* TITOLO SPESA */}
+          <View className="mb-4 md:flex-1">
+            <Text className="text-slate-700 dark:text-slate-300 font-semibold mb-2 ml-1">Titolo</Text>
+            <View className="bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-700 flex-row items-center">
+              <Type size={20} color="#94a3b8" />
+              <Controller
+                control={control}
+                rules={{ required: "Il titolo è obbligatorio" }}
+                name="nome"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    className="flex-1 ml-3 text-slate-900 dark:text-white text-base"
+                    placeholder="Es. Spesa Esselunga"
+                    placeholderTextColor="#94a3b8"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                )}
+              />
+            </View>
+            {errors.nome && <Text className="text-red-500 text-xs mt-1 ml-1">{errors.nome.message}</Text>}
           </View>
-          {errors.nome && <Text className="text-red-500 text-xs mt-1 ml-1">{errors.nome.message}</Text>}
-        </View>
 
-        {/* DESCRIZIONE */}
-        <View className="mb-6">
-          <Text className="text-slate-700 dark:text-slate-300 font-semibold mb-2 ml-1">Dettagli / Descrizione</Text>
-          <View className="bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-700 flex-row items-center">
-            <AlignLeft size={20} color="#94a3b8" />
-            <Controller
-              control={control}
-              name="descrizione"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  className="flex-1 ml-3 text-slate-900 dark:text-white text-base"
-                  placeholder="Es. Pasta e sugo"
-                  placeholderTextColor="#94a3b8"
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                  value={value}
-                />
-              )}
-            />
+          {/* DESCRIZIONE */}
+          <View className="mb-6 md:flex-1">
+            <Text className="text-slate-700 dark:text-slate-300 font-semibold mb-2 ml-1">Dettagli / Descrizione</Text>
+            <View className="bg-white dark:bg-slate-800 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-700 flex-row items-center">
+              <AlignLeft size={20} color="#94a3b8" />
+              <Controller
+                control={control}
+                name="descrizione"
+                render={({ field: { onChange, onBlur, value } }) => (
+                  <TextInput
+                    className="flex-1 ml-3 text-slate-900 dark:text-white text-base"
+                    placeholder="Es. Pasta e sugo"
+                    placeholderTextColor="#94a3b8"
+                    onBlur={onBlur}
+                    onChangeText={onChange}
+                    value={value}
+                  />
+                )}
+              />
+            </View>
           </View>
         </View>
 
@@ -292,7 +323,7 @@ export default function NuovaSpesaScreen() {
         </View>
 
         {/* OPZIONI (Personale / Ricorrente) */}
-        <View className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700">
+        <View className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 shadow-sm mb-6">
           <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-slate-100 dark:border-slate-700">
             <Text className="text-base font-semibold text-slate-900 dark:text-white">Spesa Personale</Text>
             <Controller
@@ -315,24 +346,26 @@ export default function NuovaSpesaScreen() {
           </View>
           
           {isRicorrente && (
-            <Controller
-              control={control}
-              name="frequenza_numero"
-              render={({ field: { onChange: onNumChange, value: numValue } }) => (
-                <Controller
-                  control={control}
-                  name="frequenza_tipo"
-                  render={({ field: { onChange: onTipoChange, value: tipoValue } }) => (
-                    <RicorrenzaSelector
-                      numero={numValue}
-                      tipo={tipoValue}
-                      onChangeNumero={onNumChange}
-                      onChangeTipo={onTipoChange}
-                    />
-                  )}
-                />
-              )}
-            />
+            <View className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+              <Controller
+                control={control}
+                name="frequenza_numero"
+                render={({ field: { onChange: onNumChange, value: numValue } }) => (
+                  <Controller
+                    control={control}
+                    name="frequenza_tipo"
+                    render={({ field: { onChange: onTipoChange, value: tipoValue } }) => (
+                      <RicorrenzaSelector
+                        numero={numValue}
+                        tipo={tipoValue}
+                        onChangeNumero={onNumChange}
+                        onChangeTipo={onTipoChange}
+                      />
+                    )}
+                  />
+                )}
+              />
+            </View>
           )}
         </View>
 
@@ -345,7 +378,7 @@ export default function NuovaSpesaScreen() {
         <TouchableOpacity 
           onPress={handleSubmit(onSubmit)}
           disabled={isSubmitting}
-          className={`mt-10 flex-row justify-center items-center py-4 rounded-2xl ${isSubmitting ? 'bg-blue-400' : 'bg-blue-600'}`}
+          className={`mt-4 mb-6 flex-row justify-center items-center py-4 rounded-2xl shadow-sm ${isSubmitting ? 'bg-blue-400' : 'bg-blue-600'}`}
         >
           {isSubmitting ? <ActivityIndicator color="white" /> : (
             <Text className="text-white text-lg font-bold">

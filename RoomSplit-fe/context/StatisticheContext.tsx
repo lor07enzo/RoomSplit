@@ -4,7 +4,6 @@ import { StatisticheService } from '@/services/statistiche';
 interface StatisticheContextType {
   saldi: any[];
   loadingSaldi: boolean;
-  fetchSaldiGruppo: (gruppoId: string) => Promise<void>;
   statisticheMensili: any | null; // TODO: Da implementare
   fetchMensili: (gruppoId: string, mese?: number, anno?: number) => Promise<void>;
 }
@@ -16,17 +15,7 @@ export function StatisticheProvider({ children }: { children: React.ReactNode })
     const [loadingSaldi, setLoadingSaldi] = useState(true);
     const [statisticheMensili, setStatisticheMensili] = useState<any | null>(null);
 
-    const fetchSaldiGruppo = async (gruppoId: string) => {
-        setLoadingSaldi(true);
-        try {
-            const data = await StatisticheService.getSaldiGruppo(gruppoId);
-            setSaldi(data.saldi || []);
-        } catch (err) {
-            console.error("Errore fetch saldi nel context:", err);
-        } finally {
-            setLoadingSaldi(false);
-        }
-    };
+    
 
     const fetchMensili = async (gruppoId: string, mese?: number, anno?: number) => {
         try {
@@ -38,7 +27,7 @@ export function StatisticheProvider({ children }: { children: React.ReactNode })
     };
 
     return (
-        <StatisticheContext.Provider value={{ saldi, loadingSaldi, fetchSaldiGruppo, statisticheMensili, fetchMensili }}>
+        <StatisticheContext.Provider value={{ saldi, loadingSaldi, statisticheMensili, fetchMensili }}>
             {children}
         </StatisticheContext.Provider>
     );

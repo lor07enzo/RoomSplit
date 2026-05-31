@@ -4,10 +4,14 @@ import { ListaSpesaProvider } from '@/context/ListaSpesaContext';
 import { SpeseProvider } from '@/context/SpeseContext';
 import { StatisticheProvider } from '@/context/StatisticheContext';
 import '@/global.css';
+import { useAppTheme } from '@/lib/useAppTheme';
 import { Stack } from 'expo-router';
 
 
 export default function RootLayout() {
+
+  useAppTheme();
+
   return (
     <AuthProvider>
       <StatisticheProvider>

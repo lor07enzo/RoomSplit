@@ -48,7 +48,6 @@ export interface GruppoSpesa {
   importo: number;
   descrizione: string;
   is_personale: boolean;
-  saldata: boolean;
   is_ricorrente:boolean;
   prossimo_pagamento?: Date;
   frequenza_numero: string;
@@ -103,4 +102,20 @@ export interface Documento {
   status_ocr: StatusOCR;
   importo_estratto?: number;
   uploaded_at: string;
+}
+
+export interface SaldoMembro {
+  membro_id: string;
+  utente_id: string;
+  nome: string;
+  pagato_totale: number;
+  quota_dovuta: number;
+  rimborsi_inviati: number;
+  rimborsi_ricevuti: number;
+  bilancio: number; 
+}
+
+export interface SaldiResponse {
+  gruppo_id: string;
+  saldi: SaldoMembro[];
 }

@@ -1,19 +1,23 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Categoria, GruppoSpesa } from '@/types/types';
-import { speseService } from '@/services/spese';
+import { Categoria, GruppoSpesa, SaldoMembro } from '@/types/types';
+import { CreaSpesaPayload, InviaRimborsoPayload, speseService } from '@/services/spese';
 import { useAuth } from './AuthContext';
 
 interface SpeseContextType {
     spese: GruppoSpesa[];
     categorie: Categoria[];
+    saldiPerGruppo: Record<string, SaldoMembro[]>;
     isLoading: boolean;
     isLoadingCategorie: boolean;
+    isLoadingSaldi: boolean;
     error: string | null;
     fetchSpese: () => Promise<void>;
     fetchCategorie: () => Promise<void>;
-    addSpesa: (dati: Partial<GruppoSpesa>) => Promise<boolean>;
-    updateSpesa: (id: string, dati: any) => Promise<boolean>;
+    fetchSaldi: (gruppoId: string) => Promise<void>;
+    addSpesa: (dati: CreaSpesaPayload) => Promise<boolean>;
+    updateSpesa: (id: string, dati: Partial<CreaSpesaPayload>) => Promise<boolean>;
     removeSpesa: (id: string) => Promise<boolean>;
+    inviaRimborso: (dati: InviaRimborsoPayload, gruppoId: string) => Promise<boolean>;
 }
 
 const SpeseContext = createContext<SpeseContextType | undefined>(undefined);
@@ -21,8 +25,10 @@ const SpeseContext = createContext<SpeseContextType | undefined>(undefined);
 export function SpeseProvider({ children }: { children: React.ReactNode }) {
     const [spese, setSpese] = useState<GruppoSpesa[]>([]);
     const [categorie, setCategorie] = useState<Categoria[]>([]);
+    const [saldiPerGruppo, setSaldiPerGruppo] = useState<Record<string, SaldoMembro[]>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingCategorie, setIsLoadingCategorie] = useState(true);
+    const [isLoadingSaldi, setIsLoadingSaldi] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { user } = useAuth();
   
@@ -55,6 +61,22 @@ export function SpeseProvider({ children }: { children: React.ReactNode }) {
             setIsLoadingCategorie(false);
         }
     }, [user]);
+
+    const fetchSaldi = useCallback(async (gruppoId: string) => {
+        if (!user) return;
+        setIsLoadingSaldi(true);
+        try {
+            const data = await speseService.getSaldiGruppo(gruppoId);
+            setSaldiPerGruppo(prev => ({
+                ...prev,
+                [gruppoId]: data.saldi
+            }));
+        } catch (err: any) {
+            console.error(`Errore nel fetch dei saldi per il gruppo ${gruppoId}:`, err);
+        } finally {
+            setIsLoadingSaldi(false);
+        }
+    }, [user]);
   
     // Ricarica automaticamente le spese quando l'utente effettua l'accesso
     useEffect(() => {
@@ -65,13 +87,18 @@ export function SpeseProvider({ children }: { children: React.ReactNode }) {
             // Pulisce lo stato se l'utente fa logout
             setSpese([]); 
             setCategorie([]);
+            setSaldiPerGruppo({});
         }
     }, [user, fetchSpese, fetchCategorie]);
   
-    const addSpesa = async (dati: Partial<GruppoSpesa>) => {
+    const addSpesa = async (dati: CreaSpesaPayload) => {
         try {
             const nuovaSpesa = await speseService.createSpesa(dati);
             setSpese(prev => [nuovaSpesa, ...prev]);
+            
+            if (dati.gruppo) {
+                fetchSaldi(dati.gruppo); 
+            }
             return true;
         } catch (err: any) {
             console.error("Errore validazione Django:", err.response?.data || err.message);
@@ -79,7 +106,7 @@ export function SpeseProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
-    const updateSpesa = async (id: string, dati: any) => {
+    const updateSpesa = async (id: string, dati: Partial<CreaSpesaPayload>) => {
         try {
             const spesaAggiornata = await speseService.updateSpesa(id, dati);
             setSpese(prev => prev.map(s => s.id === id ? spesaAggiornata : s));
@@ -101,10 +128,21 @@ export function SpeseProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const inviaRimborso = async (dati: InviaRimborsoPayload, gruppoId: string) => {
+        try {
+            await speseService.inviaRimborso(dati);
+            await fetchSaldi(gruppoId);
+            return true;
+        } catch (err: any) {
+            console.error("Errore durante l'invio del rimborso:", err.response?.data || err.message);
+            return false;
+        }
+    };
+
     return (
         <SpeseContext.Provider value={{ 
-          spese, categorie, isLoading, isLoadingCategorie, error, 
-          fetchSpese, fetchCategorie, addSpesa, updateSpesa, removeSpesa 
+          spese, categorie, saldiPerGruppo, isLoading, isLoadingCategorie, isLoadingSaldi, error, 
+          fetchSpese, fetchCategorie, fetchSaldi, addSpesa, updateSpesa, removeSpesa, inviaRimborso
         }}>
             {children}
         </SpeseContext.Provider>

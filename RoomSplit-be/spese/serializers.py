@@ -19,8 +19,8 @@ class GruppoSpesaSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GruppoSpesa
-        fields = ("id", "nome", "user", "gruppo", "pagatore", "categoria", "importo", "descrizione", "is_personale", "saldata", "is_ricorrente", "frequenza_numero", "frequenza_tipo", "created_at", "prossimo_pagamento")
-        read_only_fields = ("user", "gruppo", "pagatore", "created_at", "saldata")
+        fields = ("id", "nome", "user", "gruppo", "pagatore", "categoria", "importo", "descrizione", "is_personale", "is_ricorrente", "frequenza_numero", "frequenza_tipo", "created_at", "prossimo_pagamento")
+        read_only_fields = ("user", "gruppo", "pagatore", "created_at")
 
 class SpesaSerializer(serializers.ModelSerializer):
     class Meta:

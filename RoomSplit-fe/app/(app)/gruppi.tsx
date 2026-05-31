@@ -144,7 +144,7 @@ export default function GruppiScreen() {
               placeholderTextColor="#94a3b8"
               autoCapitalize={modalType === 'join' ? 'characters' : 'sentences'}
               value={inputValue}
-              onChangeText={setInputValue}
+              onChangeText={(text) => setInputValue(modalType === 'join' ? text.toUpperCase() : text)}
             />
 
             <View className="flex-row gap-3">

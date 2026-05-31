@@ -1,10 +1,15 @@
+from time import timezone
+import uuid
+
 from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.decorators import action
-from django.db.models import Q
+from rest_framework.decorators import APIView, action
+from rest_framework.exceptions import PermissionDenied
+from django.db.models import Q, Sum
 from django.db import transaction
+from gruppi.models import Membro
 from spese.models import Categoria, GruppoSpesa, Spesa, Rimborso, ListaSpesa, Articolo 
 from documenti.models import Documento
 from spese.serializers import CategoriaSerializer, GruppoSpesaSerializer, RimborsoSerializer, ListaSpesaSerializer, ArticoloSerializer
@@ -146,6 +151,23 @@ class RimborsoViewSet(viewsets.ModelViewSet):
             Q(to_membro__user=user)
         ).distinct().order_by('-created_at')
     
+    def perform_create(self, serializer):
+        from_membro = serializer.validated_data.get('from_membro')
+        
+        # Controllo di sicurezza: l'utente loggato deve corrispondere all'utente del membro
+        if from_membro.user != self.request.user:
+            raise PermissionDenied("Non puoi registrare un rimborso a nome di un altro utente.")
+        
+        serializer.save()
+
+    def perform_update(self, serializer):
+        # Controllo di sicurezza per le modifiche
+        istanza_rimborso = self.get_object()
+        if istanza_rimborso.from_membro.user != self.request.user:
+             raise PermissionDenied("Non sei autorizzato a modificare questo rimborso.")
+        
+        serializer.save()
+    
 
 class ListaSpesaViewSet(viewsets.ModelViewSet):
     serializer_class = ListaSpesaSerializer
@@ -204,3 +226,101 @@ class CategoriaViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CategoriaSerializer
     pagination_class = None
     
+class SaldiView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        gruppo_id_str = request.query_params.get('gruppo_id')
+        
+        if not gruppo_id_str:
+            return Response({"errore": "gruppo_id è obbligatorio"}, status=400)
+
+        try:
+            gruppo_id = uuid.UUID(gruppo_id_str)
+        except ValueError:
+            return Response({"errore": "gruppo_id non è un UUID valido"}, status=400)
+
+        # Recupera tutti i membri del gruppo precaricando l'utente per evitare query N+1
+        membri = Membro.objects.filter(gruppo_id=gruppo_id).select_related('user')
+        
+        saldi = []
+
+        for membro in membri:
+            utente = membro.user
+
+            # Somma le spese anticipate da questo utente nel gruppo
+            pagato = GruppoSpesa.objects.filter(
+                gruppo_id=gruppo_id,
+                pagatore=utente,
+                is_personale=False
+            ).aggregate(tot=Sum('importo'))['tot'] or 0
+
+            # Somma le quote che questo utente deve ad altri nel gruppo
+            dovuto = Spesa.objects.filter(
+                gruppo_spesa__gruppo_id=gruppo_id,
+                debitore=utente
+            ).aggregate(tot=Sum('importo_dovuto'))['tot'] or 0
+
+            # Somma i rimborsi inviati da questo membro (riduce il suo debito globale)
+            rimborsi_inviati = Rimborso.objects.filter(
+                from_membro=membro
+            ).aggregate(tot=Sum('importo'))['tot'] or 0
+
+            # Somma i rimborsi ricevuti da questo membro (riduce il suo credito globale)
+            rimborsi_ricevuti = Rimborso.objects.filter(
+                to_membro=membro
+            ).aggregate(tot=Sum('importo'))['tot'] or 0
+
+            # Calcolo del bilancio netto finale aggiornato
+            bilancio_netto = pagato - dovuto + rimborsi_inviati - rimborsi_ricevuti
+
+            saldi.append({
+                "membro_id": str(membro.id),
+                "utente_id": str(utente.id),
+                "nome": f"{utente.nome} {utente.cognome or ''}".strip(),
+                "pagato_totale": float(pagato),
+                "quota_dovuta": float(dovuto),
+                "rimborsi_inviati": float(rimborsi_inviati),
+                "rimborsi_ricevuti": float(rimborsi_ricevuti),
+                "bilancio": float(bilancio_netto)
+            })
+
+        # Ordina i saldi dal creditore massimo al debitore massimo
+        saldi = sorted(saldi, key=lambda x: x['bilancio'], reverse=True)
+
+        return Response({
+            "gruppo_id": gruppo_id,
+            "saldi": saldi
+        })
+    
+# Restituisce il riepilogo delle spese TOTALI di un utente (Private + Quote Gruppo)
+class StatistichePersonaliView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        mese = int(request.query_params.get('mese', timezone.now().month))
+        anno = int(request.query_params.get('anno', timezone.now().year))
+
+        # Spese puramente personali
+        totale_personale = GruppoSpesa.objects.filter(
+            user=user,
+            is_personale=True,
+            created_at__year=anno,
+            created_at__month=mese
+        ).aggregate(tot=Sum('importo'))['tot'] or 0
+
+        # Quote dovute nelle spese di gruppo (Tabella Spesa)
+        totale_quote_gruppo = Spesa.objects.filter(
+            debitore=user,
+            gruppo_spesa__is_personale=False,
+            gruppo_spesa__created_at__year=anno,
+            gruppo_spesa__created_at__month=mese
+        ).aggregate(tot=Sum('importo_dovuto'))['tot'] or 0
+
+        return Response({
+            "mese": mese,
+            "spese_private_pure": totale_personale,
+            "tua_parte_spese_gruppo": totale_quote_gruppo,
+            "totale_uscita_mensile": totale_personale + totale_quote_gruppo
+        })
