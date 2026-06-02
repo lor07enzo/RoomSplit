@@ -44,7 +44,7 @@ export default function ProfiloScreen() {
       
       <View className="w-full max-w-3xl mx-auto p-4 pb-12">
         
-        {/* HEADER PROFILO (Senza tasto modifica) */}
+        {/* HEADER PROFILO */}
         <View className="bg-white dark:bg-slate-800 rounded-3xl p-6 items-center shadow-sm border border-slate-100 dark:border-slate-700 mb-6 mt-4">
           <View className="w-24 h-24 rounded-full bg-blue-100 dark:bg-blue-900 border-4 border-white dark:border-slate-700 shadow-sm items-center justify-center mb-4 overflow-hidden">
             {hasAvatar ? (
@@ -76,7 +76,7 @@ export default function ProfiloScreen() {
             </Text>
             
             <View className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden">
-              
+              {/* SWITCH TEMA CHIARO/SCURO */}
               <View className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-700/50">
                 <View className="flex-row items-center">
                   <View className="w-10 h-10 rounded-full bg-indigo-50 dark:bg-indigo-900/30 items-center justify-center mr-3">
@@ -95,8 +95,11 @@ export default function ProfiloScreen() {
                   trackColor={{ false: '#cbd5e1', true: '#6366f1' }}
                 />
               </View>
-
-              <TouchableOpacity className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-700/50 active:bg-slate-50 dark:active:bg-slate-700/50">
+              {/* NOTIFICHE */}
+              <TouchableOpacity 
+                onPress={() => router.push('/notifiche' as any)}
+                className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-700/50 active:bg-slate-50 dark:active:bg-slate-700/50"
+              >
                 <View className="flex-row items-center">
                   <View className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-900/30 items-center justify-center mr-3">
                     <Bell size={20} color="#10b981" />
@@ -109,6 +112,7 @@ export default function ProfiloScreen() {
                 <ChevronRight size={20} color="#94a3b8" />
               </TouchableOpacity>
 
+              {/* METODI DI PAGAMENTO */}
               <TouchableOpacity className="flex-row items-center justify-between p-4 active:bg-slate-50 dark:active:bg-slate-700/50">
                 <View className="flex-row items-center">
                   <View className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 items-center justify-center mr-3">
@@ -129,6 +133,7 @@ export default function ProfiloScreen() {
               Account & Supporto
             </Text>
             
+            {/* FUNZIONI ACCOUNT EXTRA */}
             <View className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm overflow-hidden mb-6">
               <TouchableOpacity className="flex-row items-center justify-between p-4 border-b border-slate-50 dark:border-slate-700/50 active:bg-slate-50 dark:active:bg-slate-700/50">
                 <View className="flex-row items-center">

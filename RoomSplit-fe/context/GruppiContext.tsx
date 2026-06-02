@@ -1,4 +1,4 @@
-import { Gruppo, Membro } from "@/types/types";
+import { Gruppo } from "@/types/types";
 import { createContext, useCallback, useContext, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { GruppiService } from "@/services/gruppi";

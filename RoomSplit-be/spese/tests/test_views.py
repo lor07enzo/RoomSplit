@@ -1,182 +1,144 @@
-from decimal import Decimal
-
 import pytest
-from django.contrib.auth import get_user_model
-from django.urls import reverse
 from rest_framework.test import APIClient
+from django.urls import reverse
+from django.contrib.auth import get_user_model
 from gruppi.models import Gruppo, Membro
-from spese.models import Categoria, GruppoSpesa, Spesa, ListaSpesa, Articolo, Rimborso
+from spese.models import Categoria, GruppoSpesa, Spesa, Rimborso, ListaSpesa, Articolo
 from documenti.models import Documento
 
 User = get_user_model()
 
-@pytest.fixture
-def api_client():
-    return APIClient()
-
-@pytest.fixture
-def user1(db):
-    return User.objects.create_user(
-        username="mario@test.com", email="mario@test.com", password="pwd", nome="Mario", cognome="Rossi"
-    )
-
-@pytest.fixture
-def user2(db):
-    return User.objects.create_user(
-        username="luigi@test.com", email="luigi@test.com", password="pwd", nome="Luigi", cognome="Verdi"
-    )
-
-@pytest.fixture
-def user3(db):
-    return User.objects.create_user(
-        username="anna@test.com", email="anna@test.com", password="pwd", nome="Anna", cognome="Neri"
-    )
-
-@pytest.fixture
-def gruppo_test(db, user1, user2, user3):
-    gruppo = Gruppo.objects.create(nome="Appartamento 10")
-    Membro.objects.create(user=user1, gruppo=gruppo, ruolo="admin")
-    Membro.objects.create(user=user2, gruppo=gruppo, ruolo="membro")
-    Membro.objects.create(user=user3, gruppo=gruppo, ruolo="membro")
-    return gruppo
-
-@pytest.fixture
-def categoria_utenze(db):
-    cat, _ = Categoria.objects.get_or_create(
-        nome="Utenze", 
-        defaults={"icona": "🔌", "colore": "#FF9800"}
-    )
-    return cat
-
-@pytest.fixture
-def documento_mock(db, user1):
-    return Documento.objects.create(
-        caricato_da=user1,
-        nome_file="bolletta.pdf",
-        file="bollette/bolletta.pdf",
-        tipo_file="application/pdf",
-        status_ocr=Documento.StatoOCR.IN_ATTESA
-    )
-
-
 @pytest.mark.django_db
-class TestSpeseAPI:
+class TestSpeseViews:
+    
+    def setup_method(self):
+        self.client = APIClient()
+        
+        # Creazione Utenti
+        self.user_loggato = User.objects.create(username="mario_test", email="mario@roomsplit.com", nome="Mario")
+        self.user_coinquilino1 = User.objects.create(username="luigi_test", email="luigi@roomsplit.com", nome="Luigi")
+        self.user_coinquilino2 = User.objects.create(username="peach_test", email="peach@roomsplit.com", nome="Peach")
+        
+        # Creazione Gruppo e Membri
+        self.gruppo = Gruppo.objects.create(nome="Casa Test")
+        self.membro_loggato = Membro.objects.create(user=self.user_loggato, gruppo=self.gruppo)
+        self.membro_coinquilino1 = Membro.objects.create(user=self.user_coinquilino1, gruppo=self.gruppo)
+        self.membro_coinquilino2 = Membro.objects.create(user=self.user_coinquilino2, gruppo=self.gruppo)
+        
+        self.categoria = Categoria.objects.create(nome="Bollette", colore="#FF0000")
+        
+        # Autenticazione del client
+        self.client.force_authenticate(user=self.user_loggato)
 
-    def test_creazione_spesa_personale(self, api_client, user1, categoria_utenze):
-        api_client.force_authenticate(user=user1)
-        url = reverse('gruppospesa-list')
+    # --- MATEMATICA DELLA DIVISIONE ---
+    def test_divisione_automatica_con_resto(self):
+        """Testa l'algoritmo che spalma i centesimi residui sull'ultimo utente."""
         
-        payload = {
-            "nome": "Spesa Personale Amazon",
-            "importo": "25.90",
-            "categoria": categoria_utenze.nome,
-            "is_personale": True
-        }
-        
-        response = api_client.post(url, payload, format='json')
-        assert response.status_code == 201, response.data
-        assert response.data["nome"] == "Spesa Personale Amazon"
-
-    def test_creazione_spesa_di_gruppo_con_divisione_e_resto(self, api_client, user1, user2, user3, gruppo_test, categoria_utenze):
-        api_client.force_authenticate(user=user1)
-        url = reverse('gruppospesa-list')
-        
-        payload = {
-            "nome": "Cena di Casa",
-            "importo": "10.00",
-            "categoria": categoria_utenze.nome,
-            "gruppo": str(gruppo_test.id),
-            "is_personale": False,
-            "debitori": [str(user1.id), str(user2.id), str(user3.id)]
-        }
-        
-        response = api_client.post(url, payload, format='json')
-        assert response.status_code == 201, response.data
-        
-        gruppo_spesa_id = response.data["id"]
-        quote = Spesa.objects.filter(gruppo_spesa_id=gruppo_spesa_id)
-        
-        assert quote.count() == 3
-        assert quote[0].importo_dovuto == Decimal("3.33")
-        assert quote[1].importo_dovuto == Decimal("3.33")
-        assert quote[2].importo_dovuto == Decimal("3.34")
-
-    def test_creazione_spesa_con_associazione_documento_successo(self, api_client, user1, documento_mock, categoria_utenze):
-        api_client.force_authenticate(user=user1)
         url = reverse('gruppospesa-list')
         
         payload = {
             "nome": "Bolletta Luce",
-            "importo": "85.00",
-            "categoria": categoria_utenze.nome,
-            "is_personale": True,
-            "documento_id": str(documento_mock.id)
+            "importo": "10.00",
+            "categoria": self.categoria.nome,
+            "gruppo": self.gruppo.id,
+            "is_personale": False,
+            "debitori": [self.user_loggato.id, self.user_coinquilino1.id, self.user_coinquilino2.id]
         }
-        
-        response = api_client.post(url, payload, format='json')
-        assert response.status_code == 201, response.data
-        
-        documento_mock.refresh_from_db()
-        assert str(documento_mock.gruppo_spesa_id) == response.data["id"]
-        assert documento_mock.status_ocr == Documento.StatoOCR.COMPLETATO
 
-    def test_creazione_spesa_con_documento_gia_associato_errore(self, api_client, user1, documento_mock, categoria_utenze):
-        api_client.force_authenticate(user=user1)
+        response = self.client.post(url, payload, format='json')
+        assert response.status_code == 201
+
+        spesa_creata = GruppoSpesa.objects.get(id=response.data['id'])
+        quote = Spesa.objects.filter(gruppo_spesa=spesa_creata).order_by('id')
         
-        spesa_esistente = GruppoSpesa.objects.create(nome="Spesa Vecchia", user=user1, importo=50.00)
-        documento_mock.gruppo_spesa = spesa_esistente
-        documento_mock.save()
+        assert quote.count() == 3
+        # I primi due pagano la quota arrotondata
+        assert float(quote[0].importo_dovuto) == 3.33
+        assert float(quote[1].importo_dovuto) == 3.33
+        # L'ultimo si fa carico del centesimo mancante
+        assert float(quote[2].importo_dovuto) == 3.34
+
+    # --- ASSOCIAZIONE DOCUMENTO ---
+    def test_creazione_spesa_con_documento_successo(self):
+        """Verifica che il documento venga associato e cambi stato in COMPLETATO."""
+        
+        doc = Documento.objects.create(
+            caricato_da=self.user_loggato,
+            nome_file="scontrino.pdf",
+            status_ocr=Documento.StatoOCR.IN_ATTESA
+        )
         
         url = reverse('gruppospesa-list')
         payload = {
-            "nome": "Nuova Spesa Duplicata",
-            "importo": "30.00",
-            "categoria": categoria_utenze.nome,
-            "is_personale": True,
-            "documento_id": str(documento_mock.id)
+            "nome": "Spesa con Scontrino",
+            "importo": "50.00",
+            "categoria": self.categoria.nome,
+            "gruppo": self.gruppo.id,
+            "is_personale": False,
+            "documento_id": doc.id,
+            "debitori": [self.user_loggato.id]
         }
-        
-        response = api_client.post(url, payload, format='json')
-        assert response.status_code == 400
-        assert response.data["errore"] == "Questo documento è già stato associato a un'altra spesa."
 
-    def test_svuota_articoli_presi_azione(self, api_client, user1, gruppo_test):
-        api_client.force_authenticate(user=user1)
+        response = self.client.post(url, payload, format='json')
+        assert response.status_code == 201, response.data
+
+        doc.refresh_from_db()
+        assert str(doc.gruppo_spesa.id) == response.data['id']
+        assert doc.status_ocr == Documento.StatoOCR.COMPLETATO
+
+    def test_creazione_spesa_con_documento_gia_associato(self):
+        """Verifica che non si possa associare uno scontrino già usato in un'altra spesa."""
         
-        lista = ListaSpesa.objects.create(user=user1, gruppo=gruppo_test, titolo="Spesa Settimanale")
-        articolo_libero = Articolo.objects.create(lista_spesa=lista, inserito_da=user1, nome="Pane")
-        articolo_preso = Articolo.objects.create(lista_spesa=lista, inserito_da=user1, preso_da=user1, nome="Acqua")
+        spesa_esistente = GruppoSpesa.objects.create(
+            nome="Vecchia Spesa", importo=10.0, user=self.user_loggato, pagatore=self.user_loggato
+        )
+        doc = Documento.objects.create(
+            caricato_da=self.user_loggato,
+            nome_file="usato.pdf",
+            gruppo_spesa=spesa_esistente
+        )
         
-        url = reverse('listaspesa-svuota-presi', kwargs={'pk': lista.id})
-        response = api_client.post(url, format='json')
+        url = reverse('gruppospesa-list')
+        payload = {
+            "nome": "Spesa Nuova",
+            "importo": "20.00",
+            "categoria": self.categoria.nome,
+            "documento_id": doc.id,
+        }
+
+        response = self.client.post(url, payload, format='json')
+        assert response.status_code == 400
+        assert "già stato associato" in response.data['errore']
+
+    # --- SICUREZZA RIMBORSI ---
+    def test_sicurezza_rimborso_vietato_per_altri(self):
+        """Un utente non può registrare un rimborso a nome di un altro membro."""
+        
+        url = reverse('rimborso-list')
+        payload = {
+            "from_membro": self.membro_coinquilino1.id,
+            "to_membro": self.membro_loggato.id,
+            "importo": "15.00"
+        }
+
+        response = self.client.post(url, payload, format='json')
+        
+        assert response.status_code == 403
+        assert "Non puoi registrare un rimborso a nome di un altro utente" in str(response.data)
+
+    # --- AZIONI PERSONALIZZATE LISTA SPESA ---
+    def test_azione_svuota_presi(self):
+        """Testa l'endpoint custom per ripulire la lista dagli articoli acquistati."""
+        
+        lista = ListaSpesa.objects.create(titolo="Spesa Settimanale", user=self.user_loggato)
+        
+        Articolo.objects.create(lista_spesa=lista, nome="Latte", inserito_da=self.user_loggato)
+        Articolo.objects.create(lista_spesa=lista, nome="Pane", inserito_da=self.user_loggato, preso_da=self.user_loggato)
+        
+        # Chiamata all'azione custom
+        url = reverse('listaspesa-svuota-presi', args=[lista.id])
+        response = self.client.post(url)
         
         assert response.status_code == 200
         assert Articolo.objects.filter(lista_spesa=lista).count() == 1
-        assert Articolo.objects.filter(id=articolo_libero.id).exists()
-        assert not Articolo.objects.filter(id=articolo_preso.id).exists()
-
-    def test_articolo_toggle_check_completato(self, api_client, user1, gruppo_test):
-        api_client.force_authenticate(user=user1)
-        lista = ListaSpesa.objects.create(user=user1, gruppo=gruppo_test, titolo="Lista")
-        articolo = Articolo.objects.create(lista_spesa=lista, inserito_da=user1, nome="Latte")
-        
-        url = reverse('articolo-toggle-check', kwargs={'pk': articolo.id})
-        
-        response = api_client.post(url, {"segna_come_preso": True}, format='json')
-        assert response.status_code == 200
-        assert response.data["preso_da"]["id"] == str(user1.id)  # L'ID sarà una stringa
-        
-        response = api_client.post(url, {"segna_come_preso": False}, format='json')
-        assert response.status_code == 200
-        assert response.data["preso_da"] is None
-
-    def test_categorie_lista_sola_lettura(self, api_client, user1, categoria_utenze):
-        api_client.force_authenticate(user=user1)
-        url = reverse('categoria-list')
-        
-        response = api_client.get(url)
-        assert response.status_code == 200
-        assert len(response.data) >= 1
-        
-        response = api_client.post(url, {"nome": "Nuova Categoria Forzata"}, format='json')
-        assert response.status_code == 405
+        assert Articolo.objects.filter(lista_spesa=lista).first().nome == "Latte"

@@ -16,12 +16,6 @@ export default function MobileNavigationLayout() {
   const params = useGlobalSearchParams();
   const { user, isLoading } = useAuth();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  // Dati mockati per le notifiche (li collegheremo a Django via WebSocket o Polling)
-  const [notifications, setNotifications] = useState([
-    { id: '1', title: 'Nuova Spesa', message: 'Marco ha aggiunto 50€ per "Spesa Esselunga"', time: '10 min fa', unread: true },
-    { id: '2', title: 'Affitto in scadenza', message: 'Ricordati di pagare la tua quota (300€) entro domani.', time: '2 ore fa', unread: true },
-    { id: '3', title: 'Debito saldato', message: 'Giulia ti ha rimborsato 15€.', time: '1 giorno fa', unread: false },
-  ]);
 
   if (isLoading) {
     return null; 
@@ -30,9 +24,6 @@ export default function MobileNavigationLayout() {
   if (!user) {
     return <Redirect href="/(auth)" />;
   }
-
-
-  const unreadCount = notifications.filter(n => n.unread).length;
 
   const NAV_ITEMS: NavItem[] = [
     { name: 'Dashboard', path: '/dashboard' as Href, icon: LayoutGrid },
@@ -54,10 +45,6 @@ export default function MobileNavigationLayout() {
 
     const currentItem = NAV_ITEMS.find(item => item.path === pathname);
     return currentItem ? currentItem.name : 'RoomSplit';
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, unread: false })));
   };
 
   return (
@@ -82,17 +69,6 @@ export default function MobileNavigationLayout() {
         </View>
 
         <View className="flex-row items-center gap-4">
-          {/* NOTIFICHE */}
-          <TouchableOpacity 
-            className="p-2 relative"
-            onPress={() => setIsNotificationsOpen(true)}
-          >
-            <Bell size={24} color="#64748b" />
-            {unreadCount > 0 && (
-              <View className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-800" />
-            )}
-          </TouchableOpacity>
-
           {/* PROFILO */}
           <TouchableOpacity 
             className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-700 border-2 border-transparent active:opacity-70 justify-center items-center"
@@ -114,60 +90,6 @@ export default function MobileNavigationLayout() {
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* MODAL NOTIFICHE */}
-      <Modal
-        visible={isNotificationsOpen}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setIsNotificationsOpen(false)}
-      >
-        <Pressable 
-          className="flex-1 bg-black/5 dark:bg-black/20"
-          onPress={() => setIsNotificationsOpen(false)}
-        >
-          <View className="absolute top-16 right-4 w-[90%] max-w-[340px] bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden max-h-[80%]">
-            
-            {/* HEADER DEL POPOVER */}
-            <View className="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex-row justify-between items-center bg-slate-50 dark:bg-slate-800/50">
-              <Text className="font-bold text-base text-slate-900 dark:text-white">
-                Notifiche {unreadCount > 0 && `(${unreadCount})`}
-              </Text>
-              {unreadCount > 0 && (
-                <TouchableOpacity onPress={markAllAsRead} className="p-1 rounded-md hover:bg-slate-200">
-                  <Check size={18} color="#2563eb" />
-                </TouchableOpacity>
-              )}
-            </View>
-
-            {/* LISTA NOTIFICHE */}
-            <ScrollView className="px-2" showsVerticalScrollIndicator={false}>
-              {notifications.length === 0 ? (
-                <Text className="text-center text-slate-500 py-6">Nessuna notifica recente.</Text>
-              ) : (
-                notifications.map((notif) => (
-                  <TouchableOpacity 
-                    key={notif.id} 
-                    className={`p-3 my-1 rounded-xl flex-col ${notif.unread ? 'bg-blue-50 dark:bg-blue-900/20' : 'bg-transparent'}`}
-                  >
-                    <View className="flex-row justify-between items-start mb-1">
-                      <Text className={`font-semibold text-sm ${notif.unread ? 'text-blue-900 dark:text-blue-100' : 'text-slate-800 dark:text-slate-200'}`}>
-                        {notif.title}
-                      </Text>
-                      <Text className="text-[10px] text-slate-400">{notif.time}</Text>
-                    </View>
-                    <Text className={`text-xs ${notif.unread ? 'text-blue-700 dark:text-blue-300' : 'text-slate-500 dark:text-slate-400'}`}>
-                      {notif.message}
-                    </Text>
-                  </TouchableOpacity>
-                ))
-              )}
-              <View className="h-2" /> 
-            </ScrollView>
-
-          </View>
-        </Pressable>
-      </Modal>
 
       {/* AREA CONTENUTO PRINCIPALE */}
       <View className="flex-1 overflow-hidden">

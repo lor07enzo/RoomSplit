@@ -154,7 +154,7 @@ class RimborsoViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         from_membro = serializer.validated_data.get('from_membro')
         
-        # Controllo di sicurezza: l'utente loggato deve corrispondere all'utente del membro
+        # Controllo di sicurezza per registrare un rimborso
         if from_membro.user != self.request.user:
             raise PermissionDenied("Non puoi registrare un rimborso a nome di un altro utente.")
         

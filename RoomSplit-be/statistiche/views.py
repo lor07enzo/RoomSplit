@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models.functions import ExtractMonth
 from django.db.models import Sum, F
 from django.utils import timezone
-from spese.models import GruppoSpesa
+from spese.models import GruppoSpesa, Spesa
 import uuid 
 
 class StatisticheMensiliView(APIView):
@@ -102,5 +102,36 @@ class StatisticheAnnualiView(APIView):
                 {"mese": mese, "totale": totale} 
                 for mese, totale in dati_grafico.items()
             ]
+        })
+    
+class StatistichePersonaliView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        mese = int(request.query_params.get('mese', timezone.now().month))
+        anno = int(request.query_params.get('anno', timezone.now().year))
+
+        totale_personale = GruppoSpesa.objects.filter(
+            user=user,
+            is_personale=True,
+            created_at__year=anno,
+            created_at__month=mese
+        ).aggregate(tot=Sum('importo'))['tot'] or 0
+
+        # 2. Quote dovute nelle spese di gruppo (Legge dalla tabella Spesa)
+        totale_quote_gruppo = Spesa.objects.filter(
+            debitore=user,
+            gruppo_spesa__is_personale=False,
+            gruppo_spesa__created_at__year=anno,
+            gruppo_spesa__created_at__month=mese
+        ).aggregate(tot=Sum('importo_dovuto'))['tot'] or 0
+
+        return Response({
+            "mese": mese,
+            "anno": anno,
+            "spese_private_pure": totale_personale,
+            "tua_parte_spese_gruppo": totale_quote_gruppo,
+            "totale_uscita_mensile": totale_personale + totale_quote_gruppo
         })
     

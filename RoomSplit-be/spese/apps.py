@@ -28,4 +28,5 @@ class SpeseConfig(AppConfig):
     name = 'spese'
 
     def ready(self):
+        import spese.signals
         post_migrate.connect(crea_categorie_default, sender=self)

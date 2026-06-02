@@ -35,12 +35,6 @@ def api_client():
     return APIClient()
 
 @pytest.fixture
-def user1(db):
-    return User.objects.create_user(
-        username="doc1@test.com", email="doc1@test.com", password="pwd", nome="Mario", cognome="Rossi"
-    )
-
-@pytest.fixture
 def gruppo_condiviso(db, user1):
     gruppo = Gruppo.objects.create(nome="Gruppo Documenti")
     Membro.objects.create(user=user1, gruppo=gruppo, ruolo="admin")
@@ -49,7 +43,7 @@ def gruppo_condiviso(db, user1):
 @pytest.fixture
 def spesa_test(db, user1, gruppo_condiviso):
     return GruppoSpesa.objects.create(
-        nome="Spesa Test Documento", user=user1, gruppo=gruppo_condiviso, importo=10.0
+        nome="Spesa Test Documento", user=user1, pagatore=user1, gruppo=gruppo_condiviso, importo=10.0
     )
 
 @pytest.fixture

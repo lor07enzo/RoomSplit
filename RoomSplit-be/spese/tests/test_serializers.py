@@ -26,7 +26,7 @@ class TestSpeseSerializers:
         serializer = GruppoSpesaSerializer(data=data)
         assert serializer.is_valid(), serializer.errors
         
-        spesa = serializer.save(user=user1, gruppo=gruppo_test)
+        spesa = serializer.save(user=user1, pagatore=user1, gruppo=gruppo_test)
 
         assert spesa.nome == "Cena Sushi"
         assert spesa.categoria == categoria_spesa

@@ -33,7 +33,13 @@ SECRET_KEY = 'django-insecure-mjxvc3@kbchps)1#!ue*eg!fw7*%a2r%#azm-!6@m=t0)h7a3t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '.ngrok-free.dev',
+    '.ngrok-free.app',
+    '.ngrok.io',
+]
 
 
 # Application definition
@@ -52,10 +58,11 @@ INSTALLED_APPS = [
     'cloudinary',
     'background_task',
     'users',
-    'gruppi',
-    'spese',
+    'gruppi.apps.GruppiConfig',
+    'spese.apps.SpeseConfig',
     'documenti',
     'statistiche',
+    'notifiche',
 ]
 
 REST_FRAMEWORK = {
@@ -116,6 +123,8 @@ CLOUDINARY_STORAGE = {
     'API_KEY': os.getenv('CLOUDINARY_API_KEY'),
     'API_SECRET': os.getenv('CLOUDINARY_API_SECRET')
 }
+
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', None)
 
 STORAGES = {
     "staticfiles": {

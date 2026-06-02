@@ -21,13 +21,12 @@ class TestSpeseModels:
             importo=120.50
         )
         assert str(spesa) == "Spesa Esselunga"
-        assert spesa.saldata is False
         assert spesa.is_ricorrente is False
         assert spesa.frequenza_tipo == "mesi"
 
     def test_creazione_spesa(self, user1, user2, gruppo_test):
         gruppo_spesa = GruppoSpesa.objects.create(
-            nome="Bolletta Luce", user=user1, gruppo=gruppo_test, importo=100.00
+            nome="Bolletta Luce", user=user1, pagatore=user1, gruppo=gruppo_test, importo=100.00
         )
         quota_dovuta = Spesa.objects.create(
             gruppo_spesa=gruppo_spesa,
