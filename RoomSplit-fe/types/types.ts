@@ -1,4 +1,4 @@
-export type TipologiaRimborso = 'contanti' | 'bonifico' | 'paypal' | 'satispay' | 'stripe' | 'altro';
+export type TipologiaRimborso = 'contanti' | 'paypal' | 'stripe';
 export type StatusOCR = 'in_attesa' | 'elaborazione' | 'completato' | 'fallito';
 
 export interface User {
@@ -88,7 +88,7 @@ export interface Rimborso {
   to_membro: Membro;
   tipologia: TipologiaRimborso;
   importo: number;
-  nota: string;
+  nota?: string;
   created_at: Date;
 }
 
@@ -118,4 +118,44 @@ export interface SaldoMembro {
 export interface SaldiResponse {
   gruppo_id: string;
   saldi: SaldoMembro[];
+}
+
+// Interfacce per statistiche
+export interface CategoriaStatistica {
+  nome_categoria: string;
+  colore_categoria: string;
+  totale_speso: number;
+}
+
+export interface StatisticheMensiliResponse {
+  periodo: string;
+  totale_speso: number;
+  spese_per_categoria: CategoriaStatistica[];
+  spesa_maggiore: {
+    descrizione: string;
+    importo: number;
+    pagatore: string;
+  } | null;
+}
+
+export interface StatisticheAnnualiResponse {
+  anno: number;
+  totale_anno: number;
+  andamento_mensile: {
+    mese: number;
+    totale: number;
+  }[];
+}
+
+export interface StatistichePersonaliResponse {
+  mese: number;
+  anno: number;
+  spese_private_pure: number;
+  tua_parte_spese_gruppo: number;
+  totale_uscita_mensile: number;
+  totale_anno: number; 
+  andamento_mensile: {
+    mese: number;
+    totale: number;
+  }[];
 }

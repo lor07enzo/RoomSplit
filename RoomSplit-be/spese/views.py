@@ -1,6 +1,7 @@
-from time import timezone
 import uuid
 
+from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.response import Response
@@ -10,12 +11,14 @@ from rest_framework.exceptions import PermissionDenied
 from django.db.models import Q, Sum
 from django.db import transaction
 from gruppi.models import Membro
+from rest_framework import serializers
 from spese.models import Categoria, GruppoSpesa, Spesa, Rimborso, ListaSpesa, Articolo 
 from documenti.models import Documento
 from spese.serializers import CategoriaSerializer, GruppoSpesaSerializer, RimborsoSerializer, ListaSpesaSerializer, ArticoloSerializer
 
 
 class GruppoSpesaViewSet(viewsets.ModelViewSet):
+    queryset = GruppoSpesa.objects.none()
     serializer_class = GruppoSpesaSerializer
     permission_classes = [IsAuthenticated]
 
@@ -141,6 +144,7 @@ class GruppoSpesaViewSet(viewsets.ModelViewSet):
 
 
 class RimborsoViewSet(viewsets.ModelViewSet):
+    queryset = Rimborso.objects.none()
     serializer_class = RimborsoSerializer
     permission_classes = [IsAuthenticated]
 
@@ -170,6 +174,7 @@ class RimborsoViewSet(viewsets.ModelViewSet):
     
 
 class ListaSpesaViewSet(viewsets.ModelViewSet):
+    queryset = ListaSpesa.objects.none()
     serializer_class = ListaSpesaSerializer
     permission_classes = [IsAuthenticated]
 
@@ -193,6 +198,7 @@ class ListaSpesaViewSet(viewsets.ModelViewSet):
 
 
 class ArticoloViewSet(viewsets.ModelViewSet):
+    queryset = Articolo.objects.none()
     serializer_class = ArticoloSerializer
     permission_classes = [IsAuthenticated]
 
@@ -228,6 +234,44 @@ class CategoriaViewSet(viewsets.ReadOnlyModelViewSet):
     
 class SaldiView(APIView):
     permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="Calcolo Saldi del Gruppo",
+        description="Restituisce il bilancio netto per ogni membro del gruppo specificato, calcolando spese pagate, quote dovute e rimborsi.",
+        parameters=[
+            # Specifica che l'endpoint si aspetta ?gruppo_id nell'URL
+            OpenApiParameter(
+                name='gruppo_id', 
+                description='UUID del gruppo per cui calcolare i saldi', 
+                required=True, 
+                type=OpenApiTypes.UUID, 
+                location=OpenApiParameter.QUERY
+            )
+        ],
+        responses={
+            200: inline_serializer(
+                name='SaldiResponse',
+                fields={
+                    'gruppo_id': serializers.UUIDField(),
+                    'saldi': inline_serializer(
+                        name='SaldoUtente',
+                        many=True,
+                        fields={
+                            'membro_id': serializers.CharField(),
+                            'utente_id': serializers.CharField(),
+                            'nome': serializers.CharField(),
+                            'pagato_totale': serializers.FloatField(),
+                            'quota_dovuta': serializers.FloatField(),
+                            'rimborsi_inviati': serializers.FloatField(),
+                            'rimborsi_ricevuti': serializers.FloatField(),
+                            'bilancio': serializers.FloatField(),
+                        }
+                    )
+                }
+            ),
+            400: OpenApiTypes.OBJECT # Ritorna un oggetto generico per gli errori 400
+        }
+    )
 
     def get(self, request, *args, **kwargs):
         gruppo_id_str = request.query_params.get('gruppo_id')
@@ -291,36 +335,4 @@ class SaldiView(APIView):
         return Response({
             "gruppo_id": gruppo_id,
             "saldi": saldi
-        })
-    
-# Restituisce il riepilogo delle spese TOTALI di un utente (Private + Quote Gruppo)
-class StatistichePersonaliView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, *args, **kwargs):
-        user = request.user
-        mese = int(request.query_params.get('mese', timezone.now().month))
-        anno = int(request.query_params.get('anno', timezone.now().year))
-
-        # Spese puramente personali
-        totale_personale = GruppoSpesa.objects.filter(
-            user=user,
-            is_personale=True,
-            created_at__year=anno,
-            created_at__month=mese
-        ).aggregate(tot=Sum('importo'))['tot'] or 0
-
-        # Quote dovute nelle spese di gruppo (Tabella Spesa)
-        totale_quote_gruppo = Spesa.objects.filter(
-            debitore=user,
-            gruppo_spesa__is_personale=False,
-            gruppo_spesa__created_at__year=anno,
-            gruppo_spesa__created_at__month=mese
-        ).aggregate(tot=Sum('importo_dovuto'))['tot'] or 0
-
-        return Response({
-            "mese": mese,
-            "spese_private_pure": totale_personale,
-            "tua_parte_spese_gruppo": totale_quote_gruppo,
-            "totale_uscita_mensile": totale_personale + totale_quote_gruppo
         })

@@ -1,33 +1,59 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useState } from 'react';
 import { StatisticheService } from '@/services/statistiche';
+import { SaldoMembro, StatisticheAnnualiResponse, StatisticheMensiliResponse, StatistichePersonaliResponse } from '@/types/types';
 
 interface StatisticheContextType {
-  saldi: any[];
-  loadingSaldi: boolean;
-  statisticheMensili: any | null; // TODO: Da implementare
-  fetchMensili: (gruppoId: string, mese?: number, anno?: number) => Promise<void>;
+    saldi: SaldoMembro[];
+    loadingSaldi: boolean;
+    statisticheMensili: StatisticheMensiliResponse | null;
+    statisticheAnnuali: StatisticheAnnualiResponse | null;
+    statistichePersonali: StatistichePersonaliResponse | null;
+    fetchMensili: (gruppoId?: string | null, mese?: number, anno?: number) => Promise<void>;
+    fetchAnnuali: (gruppoId?: string | null, anno?: number) => Promise<void>;
+    fetchPersonali: (userId: string, mese?: number, anno?: number) => Promise<void>;
 }
 
 const StatisticheContext = createContext<StatisticheContextType | undefined>(undefined);
 
 export function StatisticheProvider({ children }: { children: React.ReactNode }) {
-    const [saldi, setSaldi] = useState<any[]>([]);
+    const [saldi, setSaldi] = useState<SaldoMembro[]>([]);
     const [loadingSaldi, setLoadingSaldi] = useState(true);
-    const [statisticheMensili, setStatisticheMensili] = useState<any | null>(null);
+    const [statisticheMensili, setStatisticheMensili] = useState<StatisticheMensiliResponse | null>(null);
+    const [statisticheAnnuali, setStatisticheAnnuali] = useState<StatisticheAnnualiResponse | null>(null);
+    const [statistichePersonali, setStatistichePersonali] = useState<StatistichePersonaliResponse | null>(null);
 
-    
-
-    const fetchMensili = async (gruppoId: string, mese?: number, anno?: number) => {
+    const fetchMensili = useCallback(async (gruppoId?: string | null, mese?: number, anno?: number) => {
         try {
             const data = await StatisticheService.getStatisticheMensili(gruppoId, mese, anno);
             setStatisticheMensili(data);
         } catch (err) {
             console.error("Errore fetch statistiche mensili:", err);
         }
-    };
+    }, []);
+
+    const fetchAnnuali = useCallback(async (gruppoId?: string | null, anno?: number) => {
+        try {
+            const data = await StatisticheService.getStatisticheAnnuali(gruppoId, anno);
+            setStatisticheAnnuali(data);
+        } catch (err) {
+            console.error("Errore fetch statistiche annuali:", err);
+        }
+    }, []);
+
+    const fetchPersonali = useCallback(async (userId: string, mese?: number, anno?: number) => {
+        try {
+            const data = await StatisticheService.getStatistichePersonali(userId, mese, anno);
+            setStatistichePersonali(data);
+        } catch (err) {
+            console.error("Errore fetch statistiche personali:", err);
+        }
+    }, []);
 
     return (
-        <StatisticheContext.Provider value={{ saldi, loadingSaldi, statisticheMensili, fetchMensili }}>
+        <StatisticheContext.Provider value={{ 
+            saldi, loadingSaldi, statisticheMensili, statisticheAnnuali, statistichePersonali,
+            fetchMensili, fetchAnnuali, fetchPersonali
+        }}>
             {children}
         </StatisticheContext.Provider>
     );

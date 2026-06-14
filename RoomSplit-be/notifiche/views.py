@@ -4,13 +4,28 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-
-from notifiche.services import send_telegram_notification
 from .models import ProfiloTelegram
+from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.types import OpenApiTypes
+from rest_framework import serializers as drf_serializers
 
 class GenerateTelegramTokenView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Genera Token Collegamento Telegram",
+        description="Crea un token univoco temporaneo che l'utente dovrà inviare al Bot Telegram per collegare il proprio account RoomSplit.",
+        request=None,
+        responses={
+            200: inline_serializer(
+                name='TelegramTokenResponse',
+                fields={
+                    'token': drf_serializers.CharField(help_text="Il codice da inviare al bot"),
+                    'bot_url': drf_serializers.CharField(required=False, help_text="Il link per aprire direttamente Telegram"),
+                }
+            )
+        }
+    )
     def post(self, request):
         # Recupera o crea il profilo Telegram collegato all'utente loggato
         profilo_tg, created = ProfiloTelegram.objects.get_or_create(user=request.user)
@@ -31,6 +46,14 @@ class GenerateTelegramTokenView(APIView):
 class TelegramWebhookView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        summary="Ricezione Webhook Telegram",
+        description="Endpoint di servizio chiamato direttamente dai server di Telegram quando il bot riceve un messaggio. NON chiamare questa rotta dal frontend React Native.",
+        request=OpenApiTypes.OBJECT,
+        responses={
+            200: OpenApiTypes.OBJECT
+        }
+    )
     def post(self, request):
         data = request.data
         
@@ -76,10 +99,23 @@ class TelegramWebhookView(APIView):
             url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
             requests.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": "HTML"})
 
+
 # Gestisce il collegamento di Telegram (collegato/scollegato)
 class TelegramStatusView(APIView):
     permission_classes = [IsAuthenticated]
     
+    @extend_schema(
+        summary="Stato Collegamento Telegram",
+        description="Verifica se l'utente loggato ha già collegato con successo il proprio account Telegram per ricevere le notifiche delle spese.",
+        responses={
+            200: inline_serializer(
+                name='TelegramStatusResponse',
+                fields={
+                    'connected': drf_serializers.BooleanField(),
+                }
+            )
+        }
+    )
     def get(self, request):
         # Cerca se esiste un profilo per l'utente loggato
         try:
@@ -91,6 +127,14 @@ class TelegramStatusView(APIView):
         except ProfiloTelegram.DoesNotExist:
             return Response({"connected": False})
 
+    @extend_schema(
+        summary="Scollega Account Telegram",
+        description="Rimuove l'associazione tra l'account RoomSplit e la chat di Telegram dell'utente.",
+        responses={
+            200: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT
+        }
+    )
     def delete(self, request):
         # Endpoint per "Scollegare" l'account
         try:

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Modal, Pressable, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Slot, useRouter, usePathname, useGlobalSearchParams, Href, Redirect } from 'expo-router';
 import { LayoutGrid, ReceiptText, ShoppingCart, Users, User, Bell, Check, ChevronLeft } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
@@ -15,7 +15,6 @@ export default function MobileNavigationLayout() {
   const pathname = usePathname();
   const params = useGlobalSearchParams();
   const { user, isLoading } = useAuth();
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   if (isLoading) {
     return null; 

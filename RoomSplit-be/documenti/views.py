@@ -1,17 +1,14 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from rest_framework import status
 from django.db.models import Q
 from .models import Documento
 from .serializers import DocumentoSerializer
-from .services import estrai_dati_bolletta
 from .tasks import task_estrai_dati_bolletta
 
 
 class DocumentoViewSet(viewsets.ModelViewSet):
+    queryset = Documento.objects.none()
     serializer_class = DocumentoSerializer
     permission_classes = [IsAuthenticated]
     parser_classes = (MultiPartParser, FormParser)

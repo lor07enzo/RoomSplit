@@ -6,6 +6,7 @@ from .models import Gruppo, Membro
 from .serializers import GruppoSerializer
 
 class GruppoViewSet(viewsets.ModelViewSet):
+    queryset = Gruppo.objects.none()
     serializer_class = GruppoSerializer
     permission_classes = [IsAuthenticated]
 

@@ -1,15 +1,17 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Categoria, GruppoSpesa, SaldoMembro } from '@/types/types';
+import { Categoria, GruppoSpesa, Rimborso, SaldoMembro } from '@/types/types';
 import { CreaSpesaPayload, InviaRimborsoPayload, speseService } from '@/services/spese';
 import { useAuth } from './AuthContext';
 
 interface SpeseContextType {
     spese: GruppoSpesa[];
     categorie: Categoria[];
+    rimborsi: Rimborso[];
     saldiPerGruppo: Record<string, SaldoMembro[]>;
     isLoading: boolean;
     isLoadingCategorie: boolean;
     isLoadingSaldi: boolean;
+    isLoadingRimborsi: boolean;
     error: string | null;
     fetchSpese: () => Promise<void>;
     fetchCategorie: () => Promise<void>;
@@ -18,6 +20,7 @@ interface SpeseContextType {
     updateSpesa: (id: string, dati: Partial<CreaSpesaPayload>) => Promise<boolean>;
     removeSpesa: (id: string) => Promise<boolean>;
     inviaRimborso: (dati: InviaRimborsoPayload, gruppoId: string) => Promise<boolean>;
+    fetchRimborsiPersonali: () => Promise<void>;
 }
 
 const SpeseContext = createContext<SpeseContextType | undefined>(undefined);
@@ -25,10 +28,12 @@ const SpeseContext = createContext<SpeseContextType | undefined>(undefined);
 export function SpeseProvider({ children }: { children: React.ReactNode }) {
     const [spese, setSpese] = useState<GruppoSpesa[]>([]);
     const [categorie, setCategorie] = useState<Categoria[]>([]);
+    const [rimborsi, setRimborsi] = useState<Rimborso[]>([]);
     const [saldiPerGruppo, setSaldiPerGruppo] = useState<Record<string, SaldoMembro[]>>({});
     const [isLoading, setIsLoading] = useState(true);
     const [isLoadingCategorie, setIsLoadingCategorie] = useState(true);
     const [isLoadingSaldi, setIsLoadingSaldi] = useState(true);
+    const [isLoadingRimborsi, setIsLoadingRimborsi] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { user } = useAuth();
   
@@ -77,12 +82,25 @@ export function SpeseProvider({ children }: { children: React.ReactNode }) {
             setIsLoadingSaldi(false);
         }
     }, [user]);
+
+    const fetchRimborsiPersonali = useCallback(async () => {
+        setIsLoadingRimborsi(true);
+        try {
+            const dati = await speseService.getRimborsoHistory(); 
+            setRimborsi(dati || []);
+        } catch (err) {
+            console.error("Errore nel recupero dello storico rimborsi:", err);
+        } finally {
+            setIsLoadingRimborsi(false);
+        }
+    }, []);
   
     // Ricarica automaticamente le spese quando l'utente effettua l'accesso
     useEffect(() => {
         if (user) {
             fetchSpese();
             fetchCategorie();
+            fetchRimborsiPersonali();
         } else {
             // Pulisce lo stato se l'utente fa logout
             setSpese([]); 
@@ -141,8 +159,8 @@ export function SpeseProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <SpeseContext.Provider value={{ 
-          spese, categorie, saldiPerGruppo, isLoading, isLoadingCategorie, isLoadingSaldi, error, 
-          fetchSpese, fetchCategorie, fetchSaldi, addSpesa, updateSpesa, removeSpesa, inviaRimborso
+          spese, categorie, rimborsi, saldiPerGruppo, isLoading, isLoadingCategorie, isLoadingSaldi, isLoadingRimborsi, error, 
+          fetchSpese, fetchCategorie, fetchSaldi, fetchRimborsiPersonali, addSpesa, updateSpesa, removeSpesa, inviaRimborso
         }}>
             {children}
         </SpeseContext.Provider>

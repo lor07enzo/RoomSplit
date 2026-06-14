@@ -1,20 +1,80 @@
-import { ScrollView, TouchableOpacity, View } from 'react-native';
+import { ScrollView, TouchableOpacity, View, useWindowDimensions, Alert, ActivityIndicator } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/context/AuthContext';
-import { useState } from 'react';
-import { ArrowUpRight, Bell, Plus, Receipt, Zap, ShoppingCart } from 'lucide-react-native';
+import { useSpese } from '@/context/SpeseContext';
+import { useGruppi } from '@/context/GruppiContext';
+import { useState, useMemo, useEffect } from 'react';
+import { ArrowUpRight, ArrowDownRight, Plus, User, CreditCard, Banknote, Repeat } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { StatisticheWidget } from '@/components/statistiche/StatisticheWidget';
+import { StatistichePersonaliWidget } from '@/components/statistiche/StatistichePersonaliWidget';
+import { TipologiaRimborso } from '@/types/types';
+import { SpeseRicorrentiWidget } from '@/components/dashboard/SpeseRicorrentiWidget';
+import { SaldiDebitiWidget } from '@/components/dashboard/SaldiDebitiWidget';
+import { StoricoRimborsiWidget } from '@/components/dashboard/StoricoRimborsiWidget';
+
+interface DettaglioGruppo {
+    gruppo_id: string;
+    mio_membro_id: string;
+    suo_membro_id: string;
+    suo_bilancio_nel_gruppo: number;
+    mio_bilancio_nel_gruppo: number;
+}
+
+interface SaldoAggregato {
+    utente_id: string;
+    nome: string;
+    bilancio_netto: number;
+    dettagli_gruppi: DettaglioGruppo[];
+}
 
 export default function DashboardScreen() {
-    const router = useRouter()
-    const { user, logout } = useAuth();
+    const router = useRouter();
+    const { user } = useAuth();
+    const { gruppi, fetchGruppi, isLoading: isLoadingGruppi } = useGruppi();
+    const { fetchSaldi } = useSpese();
+    const { width } = useWindowDimensions();
+    const isTablet = width >= 768;
+
     const [viewMode, setViewMode] = useState<'gruppo' | 'personali'>('gruppo');
+    const [gruppoAttivoId, setGruppoAttivoId] = useState<string | null>(null);
+    const [loadingSaldi, setLoadingSaldi] = useState(true);
+
+    useEffect(() => {
+        if (user) {
+            fetchGruppi();
+        }
+    }, [user]);
+
+    useEffect(() => {
+        const caricaTuttiISaldi = async () => {
+            if (gruppi.length === 0) {
+                setLoadingSaldi(false);
+                return;
+            }
+            setLoadingSaldi(true);
+            try {
+                const cachePromises = gruppi.map(g => fetchSaldi(g.id));
+                await Promise.all(cachePromises);
+            } catch (err) {
+                console.error("Errore durante il recupero dei saldi complessivi:", err);
+            } finally {
+                setLoadingSaldi(false);
+            }
+        };
+
+        if (!isLoadingGruppi) {
+            caricaTuttiISaldi();
+        }
+    }, [gruppi, isLoadingGruppi, fetchSaldi]);
+
+    const staCaricandoDati = isLoadingGruppi || loadingSaldi;
 
     return (
         <View className="flex-1 bg-slate-50 dark:bg-slate-900">
             <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
 
-                {/* Header e Toggle */}
+                {/* --- HEADER E TOGGLE --- */}
                 <View className="flex-row items-center mb-6">
                     <View className="flex-row items-center bg-slate-200 dark:bg-slate-800 rounded-lg p-1 flex-1">
                         <TouchableOpacity 
@@ -33,87 +93,45 @@ export default function DashboardScreen() {
                     </View>
                 </View>
 
-                {/* Card Saldo Netto */}
-                <View className="bg-blue-600 rounded-2xl p-6 mb-6 shadow-md">
-                    <Text className="text-blue-100 text-sm font-medium mb-1">Saldo Netto Totale</Text>
-                    <Text className="text-white text-4xl font-bold mb-4">+ €45.50</Text>
-                    <View className="flex-row gap-3">
-                        <View className="bg-green-400/20 px-3 py-1.5 rounded-full flex-row items-center">
-                            <ArrowUpRight size={16} color="#4ade80" />
-                            <Text className="text-green-400 font-medium ml-1">In Credito</Text>
+                <View className={`flex ${isTablet ? 'flex-row gap-6' : 'flex-col gap-0'}`}>
+                    
+                    {/* COLONNA SINISTRA */}
+                    <View className={isTablet ? 'flex-1' : 'w-full'}>
+                        
+                        {/* SALDI E DEI DEBITI GLOBALI (in modalità gruppo) */}
+                        {viewMode === 'gruppo' && (
+                            <SaldiDebitiWidget staCaricandoDati={staCaricandoDati} />
+                        )}
+
+                        {/* SPESE RICORRENTI */}
+                        <SpeseRicorrentiWidget viewMode={viewMode} />
+
+                        {/* STORICO RIMBORSI */}
+                        {viewMode === 'personali' && (
+                            <StoricoRimborsiWidget />
+                        )}
+
+                    </View>
+
+                    {/* COLONNA DESTRA */}
+                    <View className={isTablet ? 'flex-[1.5]' : 'w-full'}>
+                        <View className="mb-6">
+                            <Text className="text-lg font-bold text-slate-900 dark:text-white mb-3">
+                                {viewMode === 'gruppo' ? "Analisi Finanziaria (Tutti i Gruppi)" : "Le Tue Spese Private"}
+                            </Text>
+                            
+                            {viewMode === 'gruppo' ? (
+                                <StatisticheWidget gruppoId={gruppoAttivoId || "all"} />
+                            ) : (
+                                <StatistichePersonaliWidget userId={user?.id || ""} />
+                            )}
                         </View>
                     </View>
                 </View>
-
-                {/* Scadenze e notifiche urgenti */}
-                <View className="bg-white dark:bg-slate-800 rounded-2xl p-4 mb-6 shadow-sm border border-slate-100 dark:border-slate-700">
-                    <View className="flex-row justify-between items-center mb-4 border-b border-slate-100 dark:border-slate-700 pb-4">
-                        <View>
-                            <Text className="text-slate-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Bollette da pagare</Text>
-                            <View className="flex-row items-center">
-                                <Text className="text-3xl font-bold text-slate-900 dark:text-white mr-3">3</Text>
-                                <View className="bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded">
-                                    <Text className="text-red-600 dark:text-red-400 font-medium">-€82.00</Text>
-                                </View>
-                            </View>
-                        </View>
-                        <Receipt size={28} color="#cbd5e1" />
-                    </View>
-                    <View className="flex-row justify-between items-center pt-2">
-                        <Text className="text-slate-600 dark:text-slate-300">Prossimo Affitto</Text>
-                        <View className="bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-lg">
-                            <Text className="font-bold text-slate-900 dark:text-white">01 Ott</Text>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Grafico andamento */}
-                <View className="mb-8">
-                    <View className="flex-row justify-between items-end mb-4">
-                        <Text className="text-xl font-bold text-slate-900 dark:text-white">Andamento Annuale</Text>
-                        <TouchableOpacity>
-                            <Text className="text-blue-600 font-medium">Vedi Dettagli</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <View className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700 h-64 justify-center items-center">
-                        {/* Qui inserirai il tuo <ExpenseChart data={...} /> */}
-                        <Text className="text-slate-400">Placeholder Grafico (Recharts / ChartKit)</Text>
-                    </View>
-                </View>
-
-                {/* Ripartizione Categorie */}
-                <View className="mb-8">
-                    <Text className="text-xl font-bold text-slate-900 dark:text-white mb-4">Ripartizione Categorie</Text>
-                    <View className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-700">
-                        {/* Item 1 */}
-                        <View className="flex-row items-center mb-4">
-                            <View className="bg-orange-100 p-3 rounded-full mr-4">
-                                <Zap size={20} color="#ea580c" />
-                            </View>
-                            <View className="flex-1">
-                                <Text className="font-bold text-slate-900 dark:text-white">Utenze</Text>
-                                <Text className="text-slate-500 text-sm">€245.50 questo mese</Text>
-                            </View>
-                            <Text className="font-bold text-slate-900 dark:text-white">24%</Text>
-                        </View>
-                        {/* Item 2 */}
-                        <View className="flex-row items-center">
-                            <View className="bg-green-100 p-3 rounded-full mr-4">
-                                <ShoppingCart size={20} color="#16a34a" />
-                            </View>
-                            <View className="flex-1">
-                                <Text className="font-bold text-slate-900 dark:text-white">Spesa</Text>
-                                <Text className="text-slate-500 text-sm">€120.00 questo mese</Text>
-                            </View>
-                            <Text className="font-bold text-slate-900 dark:text-white">48%</Text>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Spacer per non far coprire l'ultimo elemento dalla bottom bar o dal FAB */}
                 <View className="h-24" />
             </ScrollView>
 
+            {/* FLOATING ACTION BUTTON */}
             <TouchableOpacity 
               onPress={() => router.push('/nuova-spesa')}
               className="absolute bottom-6 right-6 bg-blue-600 w-14 h-14 rounded-full items-center justify-center shadow-lg"

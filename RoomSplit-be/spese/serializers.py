@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from gruppi.serializers import MembroSerializer
 from spese.models import Categoria, GruppoSpesa, Spesa, ListaSpesa, Articolo, Rimborso
 
 
@@ -66,3 +67,12 @@ class RimborsoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rimborso
         fields = ("id", "from_membro", "to_membro", "tipologia", "importo", "nota", "created_at")
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        
+        # Sovrascrive gli ID con gli oggetti serializzati quando viene restituita la risposta
+        response['from_membro'] = MembroSerializer(instance.from_membro).data
+        response['to_membro'] = MembroSerializer(instance.to_membro).data
+        
+        return response

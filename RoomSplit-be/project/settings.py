@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
+    'drf_spectacular',
     'corsheaders',
     'cloudinary_storage',
     'cloudinary',
@@ -63,9 +64,11 @@ INSTALLED_APPS = [
     'documenti',
     'statistiche',
     'notifiche',
+    'pagamenti',
 ]
 
 REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     )
@@ -125,6 +128,16 @@ CLOUDINARY_STORAGE = {
 }
 
 TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', None)
+
+# Impostazioni per drf-spectacular (documentazione API)
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'RoomSplit API Documentation',
+    'DESCRIPTION': 'Documentazione interattiva degli endpoint per la gestione delle spese e dei documenti condivisi.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # Questa opzione separa i modelli di richiesta da quelli di risposta per maggiore chiarezza
+    'COMPONENT_SPLIT_REQUEST': True,
+}
 
 STORAGES = {
     "staticfiles": {

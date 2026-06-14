@@ -11,7 +11,7 @@ class GruppoSerializer(serializers.ModelSerializer):
         fields = ("id", "nome", "codice_invito", "created_at", "mio_ruolo")
         read_only_fields = ("id", "codice_invito", "created_at")
 
-    def get_mio_ruolo(self, obj):
+    def get_mio_ruolo(self, obj) -> str | None:
         request = self.context.get('request')
         if request and hasattr(request, 'user'):
             try:

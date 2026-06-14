@@ -8,7 +8,6 @@ import '@/global.css';
 import { useAppTheme } from '@/lib/useAppTheme';
 import { Stack } from 'expo-router';
 
-
 export default function RootLayout() {
 
   useAppTheme();

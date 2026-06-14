@@ -78,11 +78,8 @@ class Rimborso(models.Model):
 
     class MetodoPagamento(models.TextChoices):
         CONTANTI = 'contanti', 'Contanti'
-        BONIFICO = 'bonifico', 'Bonifico Bancario'
         PAYPAL = 'paypal', 'PayPal'
-        SATISPAY = 'satispay', 'Satispay'
         STRIPE = 'stripe', 'Stripe / Carta'
-        ALTRO = 'altro', 'Altro'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     

@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:latest
+    container_name: roomsplit_db
+    restart: always
+    environment:
+      POSTGRES_DB: roomsplit_db
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      # Rende persistenti i dati del database anche se il container viene distrutto
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    container_name: roomsplit_backend
+    # Monta la cartella locale nel container per avere l'hot-reload automatico quando modifichi il codice
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      - DEBUG=1
+      - DB_NAME=roomsplit_db
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:

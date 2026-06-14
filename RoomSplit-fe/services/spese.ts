@@ -59,5 +59,12 @@ export const speseService = {
     inviaRimborso: async (datiRimborso: InviaRimborsoPayload): Promise<Rimborso> => {
         const response = await api.post<Rimborso>('/v1/rimborsi/', datiRimborso);
         return response.data;
+    },
+
+    // Recupera lo storico dei rimborsi
+    getRimborsoHistory: async (): Promise<Rimborso[]> => {
+        const response = await api.get<Rimborso[]>('/v1/rimborsi/');
+        return response.data;
     }
+    
 };  

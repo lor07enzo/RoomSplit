@@ -1,33 +1,86 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Share, Platform, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Share, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useGruppi } from '@/context/GruppiContext';
 import { useAuth } from '@/context/AuthContext';
 import { GruppiService } from '@/services/gruppi';
-import { ListaSpesa, Membro } from '@/types/types';
-import { Crown, LogOut, Trash2, ArrowRight, Copy, Check, ChevronDown, ChevronUp, ShoppingBag, Share2 } from 'lucide-react-native';
+import { ListaSpesa, Membro, SaldoMembro, TipologiaRimborso } from '@/types/types';
+import { Trash2, ArrowRight, ChevronDown, ChevronUp, ShoppingBag, Share2 } from 'lucide-react-native';
 import { useSpese } from '@/context/SpeseContext';
 import StoricoSpeseGruppo from '@/components/gruppi/StoricoSpeseGruppo';
 import { useListaSpesa } from '@/context/ListaSpesaContext';
 import BilanciGruppoScreen from '@/components/gruppi/BilanciGruppo';
+import { MembriGruppoWidget } from '@/components/gruppi/MembriGruppo';
+import { ModalSaldaDebito } from '@/components/ModalSaldaDebito';
 
 export default function GruppoDetailScreen() {
   const router = useRouter();
-  const { user: currentUser } = useAuth();
+  const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { gruppi, removeMembroGruppo, eliminaGruppo } = useGruppi();
-  const { spese, fetchSpese, saldiPerGruppo, isLoadingSaldi, fetchSaldi } = useSpese();
+  const { spese, fetchSpese, saldiPerGruppo, isLoadingSaldi, fetchSaldi, inviaRimborso } = useSpese();
   const { liste, fetchListeEGruppi } = useListaSpesa();
+  
   const [membri, setMembri] = useState<Membro[]>([]);
   const [loading, setLoading] = useState(true);
   const [espansoListe, setEspansoListe] = useState(false);
+  
+  const [modalVisible, setModalVisible] = useState(false);
+  const [membroDaSaldare, setMembroDaSaldare] = useState<SaldoMembro | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const gruppoCorrente = gruppi.find(g => g.id === id);
-  const mIOProfiloNelGruppo = membri.find(m => m.user.id === currentUser?.id);
+  const mIOProfiloNelGruppo = membri.find(m => m.user.id === user?.id);
   const sonoAdmin = mIOProfiloNelGruppo?.ruolo === 'admin';
-
-  // Saldi specifici di questo gruppo (provenienti dal Context aggiornato)
   const saldi = saldiPerGruppo[id] || [];
+
+  const apriModalSalda = (creditore: SaldoMembro) => {
+    setMembroDaSaldare(creditore);
+    setModalVisible(true);
+  };
+
+  const confermaRimborsoGruppo = async (tipologia: TipologiaRimborso, notaFirma: string) => {
+    if (!membroDaSaldare || !id || !mIOProfiloNelGruppo) return;
+    
+    // Calcolo dell'importo esatto da saldare basandosi sul bilancio del creditore
+    const importoDaSaldare = Math.abs(parseFloat(membroDaSaldare.bilancio as any)) || 0;
+    
+    if (importoDaSaldare <= 0) {
+      Alert.alert("Attenzione", "L'importo del rimborso deve essere maggiore di zero.");
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      const payload = {
+        from_membro: mIOProfiloNelGruppo.id,
+        to_membro: membroDaSaldare.membro_id,
+        importo: importoDaSaldare,
+        tipologia: tipologia,
+        nota: notaFirma.trim() || `Saldato tramite ${tipologia}`
+      };
+
+      const esito = await inviaRimborso(payload, id);
+
+      if (esito) {
+        Alert.alert("Operazione Completata", "Il rimborso è stato registrato con successo.");
+        setModalVisible(false);
+        // Ricarica i saldi e le spese del gruppo per aggiornare l'interfaccia grafica
+        await Promise.all([
+          fetchSaldi(id),
+          fetchSpese ? fetchSpese() : Promise.resolve()
+        ]);
+      } else {
+        Alert.alert("Errore", "Impossibile elaborare la richiesta di rimborso.");
+      }
+    } catch (error) {
+      console.error("Errore durante l'invio del rimborso:", error);
+      Alert.alert("Errore", "Si è verificato un problema imprevisto.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const listeDelGruppo = useMemo(() => {
     return (liste || []).filter(l => {
@@ -74,6 +127,7 @@ export default function GruppoDetailScreen() {
     );
   }
 
+  // Funzione per condividere il codice invito del gruppo
   const handleShareCodice = async () => {
     try {
       await Share.share({
@@ -164,8 +218,6 @@ export default function GruppoDetailScreen() {
 
   return (
     <ScrollView className="flex-1 bg-slate-50 dark:bg-slate-900" showsVerticalScrollIndicator={false}>
-      
-      {/* Container limitato e centrato per ottimizzazione Tablet */}
       <View className="w-full max-w-5xl mx-auto p-4 pb-12">
         
         {/* SEZIONE CODICE INVITO (Hero) */}
@@ -193,18 +245,26 @@ export default function GruppoDetailScreen() {
           </View>
         </View>
 
-        {/* GRIGLIA RESPONSIVE */}
-        <View className="md:flex-row md:gap-6">
-          <View className="flex-1 md:w-1/2">
+        <View className="flex flex-col md:flex-row md:gap-6">
+          {/* COLONNA SINISTRA */}
+          <View className="w-full md:flex-1">
             
             {/* RIEPILOGO FINANZIARIO */}
             <BilanciGruppoScreen 
               saldi={saldi} 
               loading={isLoadingSaldi} 
-              currentUserId={currentUser?.id} 
-              onSaldaPress={(creditore) => {
-                Alert.alert("Salda", `Inizia flusso di pagamento verso ${creditore.nome}`);
-              }} 
+              currentUserId={user?.id} 
+              onSaldaPress={apriModalSalda} 
+            />
+
+            {/* MODALE DI SALDAMENTO DEBITO */}
+            <ModalSaldaDebito
+              visible={modalVisible}
+              onClose={() => setModalVisible(false)}
+              nomeCreditore={membroDaSaldare?.nome || ''}
+              importo={membroDaSaldare ? Math.abs(parseFloat(membroDaSaldare.bilancio as any)) : 0}
+              isProcessing={isProcessing}
+              onConfirm={confermaRimborsoGruppo}
             />
 
             {/* SEZIONE ACCESSO LISTE DELLA SPESA */}
@@ -237,77 +297,19 @@ export default function GruppoDetailScreen() {
                 </View>
               )}
             </View>
-
           </View>
 
           {/* COLONNA DESTRA */}
-          <View className="flex-1 md:w-1/2">
+          <View className="w-full md:flex-1">
 
-            {/* ELENCO PARTECIPANTI (Con fix Avatar) */}
-            <View className="mb-6 bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm">
-              <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wider uppercase mb-4">Membri del Gruppo ({membri.length})</Text>
-              
-              {loading ? (
-                <ActivityIndicator size="small" color="#3b82f6" className="py-6" />
-              ) : (
-                <View className="space-y-2">
-                  {membri.map((membro, index) => {
-                    const isMe = membro.user.id === currentUser?.id;
-                    const membroAdmin = membro.ruolo === 'admin';
-                    const isBordered = index !== membri.length - 1;
-                    const initial = membro.user.nome ? membro.user.nome.charAt(0).toUpperCase() : '?';
-
-                    let finalAvatarUri = membro.user.avatar;
-                    const hasAvatar = !!finalAvatarUri;
-
-                    return (
-                      <View key={membro.id} className={`flex-row items-center justify-between py-3 ${isBordered ? 'border-b border-slate-50 dark:border-slate-700/50' : ''}`}>
-                        <View className="flex-row items-center">
-                          <View className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 justify-center items-center mr-3 overflow-hidden border border-slate-200 dark:border-slate-700">
-                            {hasAvatar ? (
-                              <Image 
-                                source={{ uri: finalAvatarUri }} 
-                                className="w-full h-full" 
-                                resizeMode="cover" 
-                                onError={(e) => console.log(`Errore caricamento avatar per ${membro.user.nome}:`, e.nativeEvent.error)}
-                              />
-                            ) : (
-                              <Text className="text-slate-700 dark:text-slate-300 font-bold text-sm">
-                                {initial}
-                              </Text>
-                            )}
-                          </View>
-
-                          <View>
-                            <Text className="text-slate-900 dark:text-white font-semibold text-sm">
-                              {membro.user.nome} {membro.user.cognome || ''} {isMe && <Text className="text-slate-400 font-normal">(Tu)</Text>}
-                            </Text>
-                            {membroAdmin && (
-                              <View className="flex-row items-center mt-0.5">
-                                <Crown size={12} color="#eab308" />
-                                <Text className="text-[10px] text-yellow-600 font-medium ml-1">Amministratore</Text>
-                              </View>
-                            )}
-                          </View>
-                        </View>
-                        
-                        {isMe ? (
-                          <TouchableOpacity onPress={() => handleRemoveUser(membro.user.id, membro.user.nome, true)} className="p-2 bg-red-50 dark:bg-red-950/30 rounded-lg">
-                            <LogOut size={16} color="#ef4444" />
-                          </TouchableOpacity>
-                        ) : (
-                          sonoAdmin && !membroAdmin && (
-                            <TouchableOpacity onPress={() => handleRemoveUser(membro.user.id, membro.user.nome, false)} className="p-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 rounded-lg">
-                              <Trash2 size={16} color="#94a3b8" />
-                            </TouchableOpacity>
-                          )
-                        )}
-                      </View>
-                    );
-                  })}
-                </View>
-              )}
-            </View>
+            {/* ELENCO PARTECIPANTI */}
+            <MembriGruppoWidget 
+              membri={membri}
+              loading={loading}
+              currentUser={user}
+              sonoAdmin={sonoAdmin}
+              onRemoveMembro={handleRemoveUser}
+            />
 
             {/* STORICO DELLE SPESE DEL GRUPPO */}
             <View className="mb-6">

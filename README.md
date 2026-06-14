@@ -279,7 +279,6 @@ POST   /api/v1/pagamenti/paypal/order/  → Crea un ordine PayPal
 ### Webhook Bot Chat
 ```
 POST   /api/v1/webhooks/telegram/     → Ricezione messaggi Telegram
-POST   /api/v1/webhooks/whatsapp/     → Ricezione messaggi WhatsApp
 ```
 
 ### Export
@@ -315,17 +314,17 @@ GET    /api/v1/export/excel/          → Export Excel
 ### Fase 4 — Statistiche e Dashboard
 - [x] Sviluppo API Backend: Statistiche mensili e annuali
 - [x] Sviluppo API Backend: Calcolo Saldi e Budget Personale
-- [ ] Sviluppo UI: Grafici mensili e andamento annuale
-- [ ] Sviluppo UI: Dashboard riepilogativa (Web & Mobile)
+- [x] Sviluppo UI: Grafici mensili e andamento annuale
+- [x] Sviluppo UI: Dashboard riepilogativa (Web & Mobile)
 
 ### Fase 5 — Funzionalità Extra
 - [x] Lista della spesa condivisa
 - [ ] Export PDF ed Excel
-- [ ] Notifiche in-app e Web
-- [ ] Dark mode (Supporto nativo tramite NativeWind)
+- [x] Notifiche Telegram
+- [x] Dark mode (Supporto nativo tramite NativeWind)
 
 ### Fase 6 — Integrazioni Avanzate (AI, Pagamenti e Bot)
-- [ ] Configurazione Webhook e Bot Telegram/WhatsApp
+- [x] Configurazione Webhook e Bot Telegram
 - [ ] Sviluppo logica di predizione spese storiche (stima prossime bollette)
 - [ ] Integrazione Stripe e PayPal (ambiente Sandbox)
 
