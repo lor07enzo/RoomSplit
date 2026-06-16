@@ -5,8 +5,9 @@ on:
     branches:
       - main
     paths:
-      - 'backend/**'
-      - '.github/workflows/docker-publish.yml'
+      - 'RoomSplit-be/**'
+      - 'RoomSplit-fe/**'
+      - '.github/workflows/pipeline.yml'
 
 jobs:
   sonarcloud-and-delivery:
@@ -41,6 +42,6 @@ jobs:
       - name: Build e Push dell'immagine del Backend
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: ./RoomSplit-be
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/roomsplit-backend:latest
