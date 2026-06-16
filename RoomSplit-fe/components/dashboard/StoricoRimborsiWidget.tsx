@@ -3,15 +3,7 @@ import { View, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { useSpese } from '@/context/SpeseContext';
 import { useAuth } from '@/context/AuthContext';
-import { 
-    ArrowUpRight, 
-    ArrowDownRight, 
-    Banknote, 
-    CreditCard, 
-    Wallet, 
-    ChevronDown, 
-    ChevronUp 
-} from 'lucide-react-native';
+import { ArrowUpRight, ArrowDownRight, Banknote, CreditCard, Wallet, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { Rimborso } from '@/types/types';
 
 export function StoricoRimborsiWidget() {
@@ -80,7 +72,6 @@ export function StoricoRimborsiWidget() {
 
             <View className="gap-y-1">
                 {rimborsiDaMostrare.map((rimborso: Rimborso, index: number) => {
-                    // Controlli sicuri con Optional Chaining
                     const IsInviatoDaMe = rimborso?.from_membro?.user?.id === user?.id;
                     const controparteNome = IsInviatoDaMe 
                         ? rimborso?.to_membro?.user?.nome || 'Utente' 

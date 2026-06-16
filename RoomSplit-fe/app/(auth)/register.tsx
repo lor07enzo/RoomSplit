@@ -1,5 +1,5 @@
-import { View, Text, Alert } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { View, Text } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

@@ -31,13 +31,12 @@ export default function RicorrenzaSelector({ numero, tipo, onChangeNumero, onCha
         <Text className="text-indigo-900 dark:text-indigo-200 font-bold ml-2">Frequenza Ripetizione</Text>
       </View>
       
-      {/* Riga Input Numerico (Ora distribuita sui lati e con larghezza fissa) */}
+      {/* Riga Input Numerico */}
       <View className="flex-row items-center justify-between mb-5">
         <Text className="text-slate-700 dark:text-slate-300 font-semibold text-base">
           Ripeti ogni:
         </Text>
         
-        {/* Larghezza fissa (w-20) ed altezza fissa (h-12) bloccano l'espansione */}
         <View className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl w-20 h-12 justify-center overflow-hidden shadow-sm">
           <TextInput
             className="text-xl font-bold text-slate-900 dark:text-white text-center w-full h-full"
@@ -51,7 +50,7 @@ export default function RicorrenzaSelector({ numero, tipo, onChangeNumero, onCha
         </View>
       </View>
 
-      {/* Selettori del Periodo (Ottimizzati per non strabordare) */}
+      {/* Selettori del Periodo */}
       <View className="flex-row justify-between gap-1.5">
         {opzioniPeriodo.map((opzione) => {
           const isSelected = tipo === opzione.id;

@@ -146,25 +146,23 @@ class StatisticheAnnualiView(APIView):
     def get(self, request, *args, **kwargs):
         gruppo_id_str = request.query_params.get('gruppo_id')
         
-        gruppi_utente_ids = Membro.objects.filter(user=request.user).values_list('gruppo_id', flat=True)
-
-        if not gruppi_utente_ids:
-            return Response({"errore": "L'utente non appartiene ad alcun gruppo"}, status=404)
-
-        # Se viene passato un ID specifico
+        gruppo_uuid = None
         if gruppo_id_str and gruppo_id_str != 'all':
             try:
                 gruppo_uuid = uuid.UUID(gruppo_id_str)
             except ValueError:
                 return Response({"errore": "gruppo_id non è un UUID valido"}, status=400)
-                
-            # Sicurezza: l'utente fa parte di questo gruppo specifico
+
+        gruppi_utente_ids = Membro.objects.filter(user=request.user).values_list('gruppo_id', flat=True)
+
+        if not gruppi_utente_ids:
+            return Response({"errore": "L'utente non appartiene ad alcun gruppo"}, status=404)
+
+        if gruppo_uuid:
             if gruppo_uuid not in gruppi_utente_ids:
                 return Response({"errore": "Non hai accesso alle statistiche di questo gruppo"}, status=403)
-            
             filtro_gruppi = [gruppo_uuid]
         else:
-            # Se gruppo_id è vuoto o "all", calcola le statistiche su TUTTI i suoi gruppi
             filtro_gruppi = gruppi_utente_ids
 
         anno = int(request.query_params.get('anno', timezone.now().year))

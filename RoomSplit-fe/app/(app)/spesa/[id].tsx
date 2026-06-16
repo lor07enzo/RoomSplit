@@ -141,10 +141,9 @@ export default function SpesaDetailScreen() {
   return (
     <ScrollView className="flex-1 bg-slate-50 dark:bg-slate-900" showsVerticalScrollIndicator={false}>
       
-      {/* Contenitore principale limitato e centrato */}
       <View className="w-full max-w-4xl mx-auto pb-12">
         
-        {/* HEADER (Adattato con bordi arrotondati laterali su tablet) */}
+        {/* HEADER */}
         <View className="bg-white dark:bg-slate-800 p-6 items-center border-b border-slate-200 dark:border-slate-700 pt-10 pb-8 md:mt-4 md:rounded-3xl md:border md:shadow-sm md:mx-4">
           <View className="w-16 h-16 rounded-full items-center justify-center mb-4" style={{ backgroundColor: `${categoriaReale.colore}20` }}>
             <Text className="text-3xl">{categoriaReale.icona}</Text>
@@ -255,7 +254,7 @@ export default function SpesaDetailScreen() {
 
           </View>
 
-          {/* PULSANTI ELIMINA/MODIFICA (In fondo, occupano tutta la larghezza) */}
+          {/* PULSANTI ELIMINA/MODIFICA */}
           <View className="flex-row justify-between gap-4 mt-8 pb-4 md:mt-10">
             <TouchableOpacity 
               onPress={() => router.push(`/nuova-spesa?editId=${spesa.id}` as any)}

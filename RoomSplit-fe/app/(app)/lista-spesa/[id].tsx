@@ -197,12 +197,12 @@ export default function ListaSpesaDetailScreen() {
           <View className="flex-row items-center gap-1.5 mt-1">
             {currentLista?.gruppo ? (
               <>
-                <Home size={13} color={isDark ? "#94a3b8" : "#94a3b8"} />
+                <Home size={13} color="#94a3b8" />
                 <Text className="text-xs font-semibold text-slate-400 dark:text-slate-400">Area comune: {currentLista.gruppo.nome}</Text>
               </>
             ) : (
               <>
-                <User size={13} color={isDark ? "#94a3b8" : "#94a3b8"} />
+                <User size={13} color="#94a3b8" />
                 <Text className="text-xs font-semibold text-slate-400 dark:text-slate-400">Spazio Personale</Text>
               </>
             )}

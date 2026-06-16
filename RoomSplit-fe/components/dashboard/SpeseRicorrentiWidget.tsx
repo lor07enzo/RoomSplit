@@ -92,7 +92,7 @@ export function SpeseRicorrentiWidget({ viewMode }: SpeseRicorrentiWidgetProps) 
         return "Gruppo";
     };
 
-    // Estrae TUTTE le spese ricorrenti senza tagliarle
+    // Estrae tutte le spese ricorrenti
     const tutteLeSpeseRicorrenti = useMemo(() => {
         if (!spese || !user) return [];
         

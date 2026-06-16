@@ -90,13 +90,16 @@ class TestStatisticheAPI:
         assert categorie[0]["nome_categoria"] == "Utenze"
         assert categorie[0]["totale_speso"] == 100.00
 
-    def test_statistiche_mensili_senza_gruppo(self, api_client, user1):
+    def test_statistiche_mensili_senza_gruppo(self, api_client, user1, gruppo_casa):
+    
         api_client.force_authenticate(user=user1)
         url = reverse('stats-gruppo-mensili')
         
-        response = api_client.get(url)  # Nessun gruppo_id passato
-        assert response.status_code == 400
-        assert response.data["errore"] == "gruppo_id è obbligatorio"
+        response = api_client.get(url)
+        
+        # Ora ci aspettiamo 200, perché la view raggruppa tutti i gruppi
+        assert response.status_code == 200
+        assert "totale_speso" in response.data
 
     def test_statistiche_annuali_formattazione(self, api_client, user1, gruppo_casa, popola_spese):
         api_client.force_authenticate(user=user1)
@@ -121,7 +124,6 @@ class TestStatisticheAPI:
         assert response.status_code == 400
         assert response.data["errore"] == "gruppo_id non è un UUID valido"
 
-# TODO: Aggiungere test per statistiche personali (spese private + quote di gruppo)
     def test_statistiche_personali(self, api_client, user1, popola_spese):
         """
         Mario ha 30€ di spesa privata e 75€ di quote dovute dal gruppo. 

@@ -62,7 +62,7 @@ export default function SpesaItem({ spesa }: Props) {
           </View>
         </View>
 
-        {/* --- SEZIONE IMPORTO E STATO --- */}
+        {/* SEZIONE IMPORTO E STATO */}
         <View className="items-end">
           <Text className="font-bold text-slate-900 dark:text-white text-lg">
             €{Number(spesa.importo).toFixed(2)}

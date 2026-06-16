@@ -17,7 +17,7 @@ export default function DivisioneSpesaGruppoScreen({ watch, setValue }: Division
   const [loadingMembri, setLoadingMembri] = useState(false);
   
   const [tipoDivisione, setTipoDivisione] = useState<'tutti' | 'selezionati'>('tutti');
-  const [membriSelezionati, setMembriSelezionati] = useState<string[]>([]); // Conterrà gli ID degli User
+  const [membriSelezionati, setMembriSelezionati] = useState<string[]>([]);
 
   const selectedGruppoId = watch('gruppo');
 
@@ -48,7 +48,7 @@ export default function DivisioneSpesaGruppoScreen({ watch, setValue }: Division
 
   const toggleMembro = (userId: string) => {
     if (membriSelezionati.includes(userId)) {
-      if (membriSelezionati.length === 1) return; // Almeno un debitore deve esserci
+      if (membriSelezionati.length === 1) return;
       setMembriSelezionati(prev => prev.filter(id => id !== userId));
     } else {
       setMembriSelezionati(prev => [...prev, userId]);
@@ -91,7 +91,7 @@ export default function DivisioneSpesaGruppoScreen({ watch, setValue }: Division
         })}
       </ScrollView>
 
-      {/* SEZIONE PARTECIPANTI (Dinamica) */}
+      {/* SEZIONE PARTECIPANTI */}
       {!!selectedGruppoId && (
         <View className="bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 mt-2 shadow-sm">
           <Text className="text-sm font-bold text-slate-500 dark:text-slate-400 mb-3 tracking-wider uppercase">Divisione Spesa</Text>
@@ -119,7 +119,7 @@ export default function DivisioneSpesaGruppoScreen({ watch, setValue }: Division
                 const isChecked = membriSelezionati.includes(membro.user.id);
                 const disabilitato = tipoDivisione === 'tutti';
                 
-                // --- Gestione Avatar ---
+                //  Gestione Avatar
                 const avatarUri = membro.user.avatar;
                 const hasAvatar = !!avatarUri;
                 const initial = membro.user.nome ? membro.user.nome.charAt(0).toUpperCase() : '?';

@@ -1,14 +1,13 @@
-import { ScrollView, TouchableOpacity, View, useWindowDimensions, Alert, ActivityIndicator } from 'react-native';
+import { ScrollView, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/context/AuthContext';
 import { useSpese } from '@/context/SpeseContext';
 import { useGruppi } from '@/context/GruppiContext';
-import { useState, useMemo, useEffect } from 'react';
-import { ArrowUpRight, ArrowDownRight, Plus, User, CreditCard, Banknote, Repeat } from 'lucide-react-native';
+import { useState, useEffect } from 'react';
+import { Plus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { StatisticheWidget } from '@/components/statistiche/StatisticheWidget';
 import { StatistichePersonaliWidget } from '@/components/statistiche/StatistichePersonaliWidget';
-import { TipologiaRimborso } from '@/types/types';
 import { SpeseRicorrentiWidget } from '@/components/dashboard/SpeseRicorrentiWidget';
 import { SaldiDebitiWidget } from '@/components/dashboard/SaldiDebitiWidget';
 import { StoricoRimborsiWidget } from '@/components/dashboard/StoricoRimborsiWidget';

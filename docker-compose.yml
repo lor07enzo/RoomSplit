@@ -1,26 +1,9 @@
-version: '3.8'
-
 services:
-  db:
-    image: postgres:latest
-    container_name: roomsplit_db
-    restart: always
-    environment:
-      POSTGRES_DB: roomsplit_db
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "5432:5432"
-    volumes:
-      # Rende persistenti i dati del database anche se il container viene distrutto
-      - postgres_data:/var/lib/postgresql/data
-
   backend:
-    build: .
+    build: ./RoomSplit-be
     container_name: roomsplit_backend
-    # Monta la cartella locale nel container per avere l'hot-reload automatico quando modifichi il codice
     volumes:
-      - .:/app
+      - ./RoomSplit-be:/app
     ports:
       - "8000:8000"
     command: python manage.py runserver 0.0.0.0:8000
@@ -29,10 +12,40 @@ services:
       - DB_NAME=roomsplit_db
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_HOST=db
+      - DB_HOST=host.docker.internal
       - DB_PORT=5432
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # SEZIONE SONARQUBE
+  sonarqube:
+    image: sonarqube:community
+    container_name: roomsplit_sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_JDBC_URL=jdbc:postgresql://db-sonar:5432/sonar
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=sonar
     depends_on:
-      - db
+      - db-sonar
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+
+  db-sonar:
+    image: postgres:15
+    container_name: roomsplit_db_sonar
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=sonar
+      - POSTGRES_DB=sonar
+    volumes:
+      - postgres_sonar_data:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
+  postgres_sonar_data:

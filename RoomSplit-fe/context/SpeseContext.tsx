@@ -95,7 +95,6 @@ export function SpeseProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
   
-    // Ricarica automaticamente le spese quando l'utente effettua l'accesso
     useEffect(() => {
         if (user) {
             fetchSpese();
@@ -167,7 +166,6 @@ export function SpeseProvider({ children }: { children: React.ReactNode }) {
     );
 }
 
-// Hook personalizzato per un utilizzo rapido nei componenti
 export const useSpese = () => {
     const context = useContext(SpeseContext);
     if (context === undefined) {

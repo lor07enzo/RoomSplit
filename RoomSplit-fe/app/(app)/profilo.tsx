@@ -2,10 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Switch, Alert, Platform } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme } from '@/lib/useAppTheme';
-import { 
-  Settings, LogOut, Moon, Sun, ChevronRight, 
-  CreditCard, Bell, Shield, CircleHelp
-} from 'lucide-react-native';
+import { LogOut, Moon, Sun, ChevronRight, CreditCard, Bell, Shield, CircleHelp } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 
 export default function ProfiloScreen() {

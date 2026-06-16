@@ -42,7 +42,7 @@ export default function BilanciGruppoScreen({ saldi, loading, currentUserId, onS
     <View className="mb-6">
       <View className="flex-row justify-between items-end mb-3 px-1">
         <Text className="text-xs font-bold text-slate-500 dark:text-slate-400 tracking-wider uppercase">
-          Situazione Finanziaria
+          Riepilogo Finanziario
         </Text>
         <Text className="text-xs font-medium text-slate-400 dark:text-slate-500">
           Totale gruppo: €{totaleGruppo.toFixed(2)}
@@ -74,7 +74,7 @@ export default function BilanciGruppoScreen({ saldi, loading, currentUserId, onS
           </View>
         )}
 
-        {/* LISTA DEGLI ALTRI MEMBRI */}
+        {/* LISTA MEMBRI */}
         <View className="p-2">
           {altriSaldi.map((membro, index) => {
             const bilancio = parseFloat(membro.bilancio as any) || 0;
@@ -97,7 +97,6 @@ export default function BilanciGruppoScreen({ saldi, loading, currentUserId, onS
                   </View>
                 </View>
 
-                {/* Mostra il pulsante "Salda" solo se l'utente loggato è in debito e l'altro membro è in credito */}
                 {mioSaldo && mioSaldo.bilancio < 0 && isCredit && (
                   <TouchableOpacity 
                     onPress={() => onSaldaPress(membro)}

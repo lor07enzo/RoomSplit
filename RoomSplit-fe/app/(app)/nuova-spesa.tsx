@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Switch, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Switch, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useForm, Controller } from 'react-hook-form';
 import { useSpese } from '@/context/SpeseContext'; 
@@ -195,16 +195,12 @@ export default function NuovaSpesaScreen() {
       className="flex-1 bg-slate-50 dark:bg-slate-900" 
       keyboardShouldPersistTaps="handled"
     >
-      {/* Contenitore limitato in larghezza per tablet, centrato orizzontalmente */}
       <View className="w-full max-w-2xl mx-auto p-4 pt-8 pb-12">
         
         {/* IMPORTO */}
         <View className="mb-10 w-full items-center bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
           <Text className="text-slate-500 dark:text-slate-400 font-bold tracking-widest uppercase text-xs mb-4">Importo Spesa</Text>
-          
-          {/* Aggiunto w-full per forzare i limiti del contenitore */}
           <View className="flex-row items-center justify-center w-full px-2">
-            {/* L'icona ha flex-shrink-0 per non essere mai schiacciata */}
             <View className="mr-1 mt-1 flex-shrink-0">
               <Euro size={40} color="#3b82f6" />
             </View>

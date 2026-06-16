@@ -1,4 +1,3 @@
-// hooks/useAppTheme.ts
 import { useEffect } from 'react';
 import { useColorScheme } from 'nativewind';
 import { themeStorage } from '@/lib/storage';

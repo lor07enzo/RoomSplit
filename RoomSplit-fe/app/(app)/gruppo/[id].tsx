@@ -149,6 +149,7 @@ export default function GruppoDetailScreen() {
         } 
         router.replace('/gruppi');
       } catch (err) {
+        console.error("Errore eliminazione gruppo:", err);
         Alert.alert("Errore", "Impossibile eliminare il gruppo corrente.");
       }
     };
@@ -163,33 +164,44 @@ export default function GruppoDetailScreen() {
     }
   };
 
+  const chiediConferma = (titolo: string, messaggio: string, testoAzione: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (Platform.OS === 'web') {
+        resolve(window.confirm(messaggio));
+      } else {
+        Alert.alert(titolo, messaggio, [
+          { text: "Annulla", style: "cancel", onPress: () => resolve(false) },
+          { text: testoAzione, style: "destructive", onPress: () => resolve(true) }
+        ]);
+      }
+    });
+  };
+
   const handleRemoveUser = async (userId: string, nomeMembro: string, isSelf: boolean) => {
     const titolo = isSelf ? "Abbandona Gruppo" : "Rimuovi Membro";
+    const azione = isSelf ? "Esci" : "Rimuovi";
     const messaggio = isSelf 
       ? `Sei sicuro di voler uscire dal gruppo "${gruppoCorrente.nome}"?`
       : `Sei sicuro di voler espellere ${nomeMembro} dal gruppo?`;
 
-    const eseguiChiamata = async () => {
-      try {
-        await removeMembroGruppo(gruppoCorrente.id, userId);
-        if (isSelf) {
-          router.replace('/gruppi');
-        } else {
-          setMembri(prev => prev.filter(m => m.user.id !== userId));
-          await fetchSaldi(gruppoCorrente.id); 
-        }
-      } catch (err) {
-        Alert.alert("Errore", "Impossibile completare l'operazione.");
-      }
-    };
+    const isConfirmed = await chiediConferma(titolo, messaggio, azione);
+    
+    if (!isConfirmed) return;
 
-    if (Platform.OS === 'web') {
-      if (window.confirm(messaggio)) eseguiChiamata();
-    } else {
-      Alert.alert(titolo, messaggio, [
-        { text: "Annulla", style: "cancel" },
-        { text: isSelf ? "Esci" : "Rimuovi", style: "destructive", onPress: eseguiChiamata }
-      ]);
+    try {
+      await removeMembroGruppo(gruppoCorrente.id, userId);
+
+      if (isSelf) {
+        router.replace('/gruppi');
+        return; 
+      } 
+      
+      setMembri(prev => prev.filter(m => m.user.id !== userId));
+      await fetchSaldi(gruppoCorrente.id); 
+
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Errore", "Impossibile completare l'operazione.");
     }
   };
 
@@ -312,12 +324,10 @@ export default function GruppoDetailScreen() {
             />
 
             {/* STORICO DELLE SPESE DEL GRUPPO */}
-            <View className="mb-6">
-              <StoricoSpeseGruppo 
-                spese={speseDelGruppo} 
-                onSpesaPress={(spesaId) => router.push(`/spesa/${spesaId}`)} 
-              />
-            </View>
+            <StoricoSpeseGruppo 
+              spese={speseDelGruppo} 
+              onSpesaPress={(spesaId) => router.push(`/spesa/${spesaId}`)} 
+            />
 
           </View>
         </View>

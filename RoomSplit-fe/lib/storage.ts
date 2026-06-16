@@ -7,7 +7,7 @@ const REFRESH_TOKEN_KEY = 'roomsplit_refresh_token';
 const THEME_KEY = 'roomsplit_theme';
 
 export const tokenStorage = {
-  // Salva ENTRAMBI i token (usato al momento del Login)
+  // Salva ENTRAMBI i token 
   async saveTokens(accessToken: string, refreshToken: string) {
     if (Platform.OS === 'web') {
       localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);

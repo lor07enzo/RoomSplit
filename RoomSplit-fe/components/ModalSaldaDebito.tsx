@@ -13,14 +13,7 @@ interface ModalSaldaDebitoProps {
     onConfirm: (tipologia: TipologiaRimborso, nota: string) => void;
 }
 
-export function ModalSaldaDebito({ 
-    visible, 
-    onClose, 
-    nomeCreditore, 
-    importo, 
-    isProcessing, 
-    onConfirm 
-}: ModalSaldaDebitoProps) {
+export function ModalSaldaDebito({ visible, onClose, nomeCreditore, importo, isProcessing, onConfirm }: ModalSaldaDebitoProps) {
     const [metodoSelezionato, setMetodoSelezionato] = useState<TipologiaRimborso>('contanti');
     const [nota, setNota] = useState<string>('');
 

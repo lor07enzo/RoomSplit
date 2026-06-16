@@ -1,4 +1,3 @@
-// app/(app)/gruppi/index.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Modal, TextInput, ActivityIndicator, Alert, Pressable, Platform } from 'react-native';
 import { useGruppi } from '@/context/GruppiContext';

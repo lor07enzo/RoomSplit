@@ -37,7 +37,7 @@ export function MembriGruppoWidget({membri, loading, currentUser, sonoAdmin, onR
                                 className={`flex-row items-center justify-between py-3 ${isBordered ? 'border-b border-slate-50 dark:border-slate-700/50' : ''}`}
                             >
                                 <View className="flex-row items-center">
-                                    {/* Avatar o Iniziale dell'utente */}
+                                    {/* AVATAR */}
                                     <View className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-900 justify-center items-center mr-3 overflow-hidden border border-slate-200 dark:border-slate-700">
                                         {hasAvatar ? (
                                             <Image 
@@ -53,7 +53,7 @@ export function MembriGruppoWidget({membri, loading, currentUser, sonoAdmin, onR
                                         )}
                                     </View>
 
-                                    {/* Nome e Ruolo */}
+                                    {/* NOME E RUOLO */}
                                     <View>
                                         <Text className="text-slate-900 dark:text-white font-semibold text-sm">
                                             {membro.user.nome} {membro.user.cognome || ''} {isMe && <Text className="text-slate-400 font-normal">(Tu)</Text>}
@@ -67,7 +67,7 @@ export function MembriGruppoWidget({membri, loading, currentUser, sonoAdmin, onR
                                     </View>
                                 </View>
                                 
-                                {/* Azioni di rimozione/abbandono */}
+                                {/* AZIONI DI RIMOZIONE/ABBANDONO */}
                                 {isMe ? (
                                     <TouchableOpacity 
                                         onPress={() => onRemoveMembro(membro.user.id, membro.user.nome, true)} 

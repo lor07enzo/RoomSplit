@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 import pytest
-from spese.models import Categoria, GruppoSpesa, Spesa, ListaSpesa, Articolo, Rimborso
+from spese.models import GruppoSpesa, Spesa, ListaSpesa, Articolo, Rimborso
 from gruppi.models import Membro
 
 @pytest.mark.django_db
@@ -56,8 +56,8 @@ class TestSpeseModels:
         rimborso = Rimborso.objects.create(
             from_membro=membro2,
             to_membro=membro1,
-            tipologia=Rimborso.MetodoPagamento.BONIFICO,
+            tipologia=Rimborso.MetodoPagamento.CONTANTI,
             importo=Decimal("35.00")
         )
         # Verifica la stringa formattata definita nel metodo __str__
-        assert str(rimborso) == f"{membro2} rimborsa {membro1} di 35.00€ tramite Bonifico Bancario"
+        assert str(rimborso) == f"{membro2} rimborsa {membro1} di 35.00€ tramite Contanti"

@@ -65,8 +65,6 @@ export function GruppiProvider({ children }: { children: React.ReactNode }) {
     const removeMembroGruppo = async (gruppoId: string, userId: string) => {
         try {
             await GruppiService.removeMembro(gruppoId, userId);
-            // Se hai uno stato globale dei membri nel context, aggiornalo qui.
-            // Altrimenti la gestione locale va benissimo come vedremo sotto.
         } catch (err) {
             console.error("Errore nel context durante la rimozione del membro:", err);
             throw err;

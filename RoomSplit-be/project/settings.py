@@ -114,8 +114,8 @@ DATABASES = {
         'NAME': 'roomsplit_db',
         'USER': env('DB_USER'),
         'PASSWORD': env('DB_PASSWORD'),
-        'HOST': 'localhost', 
-        'PORT': '5432', 
+        'HOST': env('DB_HOST', default='localhost'), 
+        'PORT': env('DB_PORT', default='5432'),
     }
 }
 

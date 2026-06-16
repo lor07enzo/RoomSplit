@@ -1,5 +1,4 @@
 import { useListaSpesa } from '@/context/ListaSpesaContext';
-import { House } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Switch, ScrollView, Pressable } from 'react-native';
 import { useColorScheme } from 'nativewind';
@@ -30,14 +29,14 @@ export default function FormCreaLista({ onClose }: FormCreaListaProps) {
       await creaNuovaLista(titolo, isGruppo ? selectedGruppoId : null);
       onClose();
     } catch (err) {
-      alert('Errore durante il salvataggio.');
+      const message = err instanceof Error ? err.message : 'Errore sconosciuto';
+      alert(message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    // Il contenitore eredita il dark mode dal modale genitore, ma rafforziamo i colori qui
     <View className="bg-white dark:bg-slate-900 p-6 rounded-t-3xl shadow-xl border-t border-slate-100 dark:border-slate-800">
       <Text className="text-xl font-bold text-slate-900 dark:text-white mb-4">Nuova Lista della Spesa</Text>
 

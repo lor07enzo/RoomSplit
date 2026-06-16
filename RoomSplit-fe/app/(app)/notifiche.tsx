@@ -1,11 +1,11 @@
-import React, { useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Send, CheckCircle2, Trash2 } from 'lucide-react-native';
 import { useNotifiche } from '@/context/NotificheContext';
+import { useCallback } from 'react';
 
 export default function NotificheScreen() {
-  const { isTelegramConnected, loading, error, fetchTelegramStatus, connectTelegram, disconnectTelegram} = useNotifiche();
+  const { isTelegramConnected, loading, fetchTelegramStatus, connectTelegram, disconnectTelegram} = useNotifiche();
 
   // useFocusEffect per aggiornare lo stato quando l'utente torna su questa schermata
   useFocusEffect(

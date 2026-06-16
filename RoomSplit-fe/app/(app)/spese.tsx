@@ -19,8 +19,7 @@ export default function SpeseScreen() {
       
       const matchFilter = 
         filter === 'tutte' ? true : 
-        filter === 'personali' ? spesa.is_personale : 
-        !spesa.is_personale;
+        filter === 'personali' ? spesa.is_personale : !spesa.is_personale;
         
       return matchSearch && matchFilter;
     });

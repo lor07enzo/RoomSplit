@@ -3,7 +3,7 @@ import { View, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/context/AuthContext';
 import { useSpese } from '@/context/SpeseContext';
-import { ArrowUpRight, ArrowDownRight, User, Banknote, CreditCard, Wallet } from 'lucide-react-native';
+import { ArrowUpRight, ArrowDownRight, User, Wallet } from 'lucide-react-native';
 import { TipologiaRimborso } from '@/types/types';
 import { ModalSaldaDebito } from '../ModalSaldaDebito';
 
@@ -88,7 +88,6 @@ export function SaldiDebitiWidget({ staCaricandoDati }: SaldiDebitiWidgetProps) 
             .sort((a, b) => b.bilancio_netto - a.bilancio_netto);
     }, [saldiPerGruppo, user]);
 
-    // Questa funzione ora si limita a preparare i dati e aprire la modale
     const handlePreparaSaldamento = (utenteTarget: SaldoAggregato) => {
         if (utenteTarget.bilancio_netto < 0) {
             Alert.alert(
@@ -112,7 +111,6 @@ export function SaldiDebitiWidget({ staCaricandoDati }: SaldiDebitiWidgetProps) 
             Math.abs(gruppoDaSaldare.suo_bilancio_nel_gruppo)
         );
 
-        // Salvo i dati e apro la modale
         setDatiRimborsoCorrente({
             utente: utenteTarget,
             importo: importoDaSaldare,
@@ -121,7 +119,6 @@ export function SaldiDebitiWidget({ staCaricandoDati }: SaldiDebitiWidgetProps) 
         setModalVisible(true);
     };
 
-    // Funzione che verrà chiamata dalla modale
     const eseguiRimborso = async (tipologia: TipologiaRimborso, notaFirma: string) => {
         if (!datiRimborsoCorrente) return;
         
@@ -150,7 +147,7 @@ export function SaldiDebitiWidget({ staCaricandoDati }: SaldiDebitiWidgetProps) 
 
     return (
         <View>
-            {/* Card Saldo Netto Personale */}
+            {/* CARD SALDO NETTO TOTALE */}
             <View className={`${mioBilancioTotale >= 0 ? 'bg-blue-600 dark:bg-blue-700' : 'bg-red-500 dark:bg-red-600'} rounded-[24px] p-6 mb-6 shadow-md`}>
                 <Text className="text-blue-100 text-sm font-medium mb-1">Saldo Netto Totale</Text>
                 <View className="flex-row items-center mb-4">
