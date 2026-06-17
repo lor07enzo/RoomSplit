@@ -22,6 +22,19 @@ jobs:
         with:
           fetch-depth: 0 
 
+      # Creazione del file .env con variabili di ambiente per i test
+      - name: Crea file .env di test
+        run: |
+          echo "DB_NAME=roomsplit_db" > RoomSplit-be/.env
+          echo "DB_USER=postgres" >> RoomSplit-be/.env
+          echo "DB_PASSWORD=postgres" >> RoomSplit-be/.env
+          echo "DB_HOST=db" >> RoomSplit-be/.env
+          echo "DB_PORT=5432" >> RoomSplit-be/.env
+          echo "TELEGRAM_BOT_TOKEN=token_finto_per_test" >> RoomSplit-be/.env
+          echo "CLOUDINARY_API_KEY=chiave_finta_per_test" >> RoomSplit-be/.env
+          echo "CLOUDINARY_API_SECRET=segreto_finto" >> RoomSplit-be/.env
+          echo "CLOUDINARY_CLOUD_NAME=nome_finto" >> RoomSplit-be/.env
+
       # Avvia i container leggendo il compose principale
       - name: Avvia i container (DB e Backend)
         run: docker compose up -d db backend
@@ -31,7 +44,7 @@ jobs:
 
       # Esegui i test dentro il container
       - name: Esegui i test Django con pytest
-        run: docker compose exec -T backend pytest --cov=. --cov-report=xml
+        run: docker compose exec -T -u root backend pytest --cov=. --cov-report=xml
 
       # Analisi SonarCloud
       - name: Scansione SonarCloud
