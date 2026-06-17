@@ -24,14 +24,14 @@ jobs:
 
       # Avvia i container leggendo il compose principale
       - name: Avvia i container (DB e Backend)
-        run: docker-compose up -d db backend
+        run: docker compose up -d db backend
 
       - name: Attendi che il database sia pronto
         run: sleep 15
 
       # Esegui i test dentro il container
       - name: Esegui i test Django con pytest
-        run: docker-compose exec -T backend pytest --cov=. --cov-report=xml
+        run: docker compose exec -T backend pytest --cov=. --cov-report=xml
 
       # Analisi SonarCloud
       - name: Scansione SonarCloud
@@ -42,7 +42,7 @@ jobs:
 
       # Fermiamo i container per pulizia
       - name: Spegni i container
-        run: docker-compose down
+        run: docker compose down
 
       # Setup e Delivery su Docker Hub
       - name: Setup Docker Buildx
