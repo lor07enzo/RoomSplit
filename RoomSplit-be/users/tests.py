@@ -57,10 +57,15 @@ def test_user_registration_generates_avatar(api_client, user_data, temp_media, m
     
     mock_requests_get = mocker.patch('users.serializers.requests.get')
     
+    mock_cloudinary = mocker.patch('cloudinary.uploader.upload')
+    mock_cloudinary.return_value = {
+        'public_id': 'avatar_finto_123',
+        'secure_url': 'https://res.cloudinary.com/finto/image/upload/v1/avatar.png'
+    }
+
     # Byte reali di un minuscolo file PNG 1x1 pixel valido
     tiny_png = b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
-    
-    # Prepariamo la finta risposta HTTP
+
     mock_response = mocker.Mock()
     mock_response.status_code = 200
     mock_response.content = tiny_png
@@ -69,16 +74,13 @@ def test_user_registration_generates_avatar(api_client, user_data, temp_media, m
     response = api_client.post('/api/v1/auth/register/', user_data)
 
     assert response.status_code == status.HTTP_201_CREATED
-    
+
     user = User.objects.get(email=user_data['email'])
     assert user is not None
-    
-    # Verifichiamo che la funzione sia stata chiamata
+
     mock_requests_get.assert_called_once()
-    
-    # Verifichiamo che l'avatar sia stato salvato nel file system temporaneo
+    mock_cloudinary.assert_called_once()
     assert bool(user.avatar) is True
-    assert bool(user.avatar.name) is True
 
 
 @pytest.mark.django_db
