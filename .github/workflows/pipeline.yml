@@ -30,6 +30,7 @@ jobs:
           echo "DB_PASSWORD=postgres" >> RoomSplit-be/.env
           echo "DB_HOST=db" >> RoomSplit-be/.env
           echo "DB_PORT=5432" >> RoomSplit-be/.env
+          echo "SECRET_KEY=chiave_finta_per_github_actions_12345" >> RoomSplit-be/.env
           echo "TELEGRAM_BOT_TOKEN=token_finto_per_test" >> RoomSplit-be/.env
           echo "CLOUDINARY_API_KEY=chiave_finta_per_test" >> RoomSplit-be/.env
           echo "CLOUDINARY_API_SECRET=segreto_finto" >> RoomSplit-be/.env

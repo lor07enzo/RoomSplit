@@ -53,12 +53,12 @@ api.interceptors.response.use(
         return api(originalRequest);
 
       } catch (refreshError) {
-        console.error("Refresh fallito. Sessione definitivamente scaduta.");
         await tokenStorage.clearAllTokens();
-        return Promise.reject(refreshError);
+        const errorMessage = refreshError instanceof Error ? refreshError.message : "Sessione scaduta. Effettua nuovamente il login.";
+        throw new Error(errorMessage);
       }
     }
 
-    return Promise.reject(error);
+    throw error;
   }
 );

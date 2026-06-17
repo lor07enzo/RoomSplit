@@ -6,7 +6,7 @@ import pdfplumber
 import pytesseract
 from PIL import Image, ImageEnhance, ImageOps
 import re
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from .models import Documento
 
 # TODO: Per il deploy su Railway/Render, dovremo installare Tesseract tramite apt-get e rimuovere questa configurazione hardcoded.
@@ -79,7 +79,7 @@ def estrai_dati_bolletta(documento_id):
                 val_pulito = match.group(1).replace(',', '.').replace(' ', '')
                 try:
                     importi_trovati.append(Decimal(val_pulito))
-                except:
+                except InvalidOperation:
                     pass
             
             if importi_trovati:
