@@ -6,39 +6,54 @@ on:
       - main
     paths:
       - 'RoomSplit-be/**'
-      - 'RoomSplit-fe/**'
       - '.github/workflows/pipeline.yml'
+      - 'docker-compose.yml'
 
 jobs:
-  sonarcloud-and-delivery:
+  test-and-delivery:
     runs-on: ubuntu-latest
+    
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-      # Scarica il codice del repository
       - name: Checkout del codice
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 
 
-      # Esegue la scansione di SonarCloud (Analisi statica)
+      # Avvia i container leggendo il compose principale
+      - name: Avvia i container (DB e Backend)
+        run: docker-compose up -d db backend
+
+      - name: Attendi che il database sia pronto
+        run: sleep 15
+
+      # Esegui i test dentro il container
+      - name: Esegui i test Django con pytest
+        run: docker-compose exec -T backend pytest --cov=. --cov-report=xml
+
+      # Analisi SonarCloud
       - name: Scansione SonarCloud
         uses: SonarSource/sonarcloud-github-action@v3
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Gestito automaticamente da GitHub
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}   # Il secret che hai salvato prima
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} 
 
-      # Setup di Docker Buildx (Eseguito solo se SonarCloud passa con successo)
+      # Fermiamo i container per pulizia
+      - name: Spegni i container
+        run: docker-compose down
+
+      # Setup e Delivery su Docker Hub
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Login su Docker Hub
       - name: Login su Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Build e Delivery dell'immagine finale
       - name: Build e Push dell'immagine del Backend
         uses: docker/build-push-action@v5
         with:

@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { Slot, useRouter, usePathname, useGlobalSearchParams, Href, Redirect } from 'expo-router';
 import { LayoutGrid, ReceiptText, ShoppingCart, Users, User, ChevronLeft } from 'lucide-react-native';
 import { useAuth } from '@/context/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type NavItem = {
   name: string;
@@ -14,6 +15,8 @@ export default function MobileNavigationLayout() {
   const pathname = usePathname();
   const params = useGlobalSearchParams();
   const { user, isLoading } = useAuth();
+  
+  const insets = useSafeAreaInsets();
 
   if (isLoading) {
     return null; 
@@ -30,10 +33,8 @@ export default function MobileNavigationLayout() {
     { name: 'Gruppi', path: '/gruppi' as Href, icon: Users },
   ];
 
-  // Identifica se l'utente si trova su una delle 4 schermate principali della TabBar
   const isRootTab = NAV_ITEMS.some(item => item.path === pathname);
 
-  // Titolo dinamico in base alla rotta attuale
   const getHeaderTitle = () => {
     if (pathname.startsWith('/gruppi/') || pathname.startsWith('/gruppo/')) return 'Info Gruppo';
     if (pathname.startsWith('/spesa/') || pathname.startsWith('/spese/')) return 'Info Spesa';
@@ -49,9 +50,14 @@ export default function MobileNavigationLayout() {
     <View className="flex-1 bg-slate-50 dark:bg-slate-900">
       
       {/* HEADER SUPERIORE */}
-      <View className="h-16 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 flex-row items-center justify-between px-4">
+      <View 
+        className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 flex-row items-center justify-between px-4"
+        style={{ 
+            paddingTop: insets.top + 10,
+            paddingBottom: 10 
+        }}
+      >
         
-        {/* BACK BUTTON e TITOLO PAGINA */}
         <View className="flex-row items-center flex-1 pr-4">
           {!isRootTab && (
             <TouchableOpacity 
@@ -67,7 +73,6 @@ export default function MobileNavigationLayout() {
         </View>
 
         <View className="flex-row items-center gap-4">
-          {/* PROFILO */}
           <TouchableOpacity 
             className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-700 border-2 border-transparent active:opacity-70 justify-center items-center"
             onPress={() => router.push('/profilo' as Href)} 
@@ -95,7 +100,10 @@ export default function MobileNavigationLayout() {
       </View>
 
       {/* BOTTOM TAB BAR */}
-      <View className="flex-row justify-around bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 pb-safe pt-2 px-2 shadow-lg">
+      <View 
+        className="flex-row justify-around bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 pt-2 px-2 shadow-lg"
+        style={{ paddingBottom: insets.bottom > 0 ? insets.bottom : 10 }}
+      >
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.path;
           return (

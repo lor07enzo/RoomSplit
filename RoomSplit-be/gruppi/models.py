@@ -1,13 +1,12 @@
 import string
 import uuid
-import random
+import secrets
 from django.db import models
-
 from project.settings import AUTH_USER_MODEL
 
-# Funzione per generare un codice univoco di 6 caratteri alfanumerici
+# Funzione per generare un codice univoco di 6 caratteri alfanumerici sicuri
 def genera_codice_invito():
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    return ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(6))
 
 class Gruppo(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

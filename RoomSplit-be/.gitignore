@@ -20,3 +20,9 @@ env/
 # File Media e Statici caricati (di solito gestiti esternamente in produzione)
 media/
 staticfiles/
+
+# Report di test e coverage
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/

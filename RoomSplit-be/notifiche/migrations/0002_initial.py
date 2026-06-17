@@ -10,18 +10,14 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('gruppi', '0001_initial'),
+        ('notifiche', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='membro',
+            model_name='profilotelegram',
             name='user',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='appartenenze_gruppi', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AlterUniqueTogether(
-            name='membro',
-            unique_together={('user', 'gruppo')},
+            field=models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='profilo_telegram', to=settings.AUTH_USER_MODEL),
         ),
     ]

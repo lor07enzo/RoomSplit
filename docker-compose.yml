@@ -1,4 +1,17 @@
 services:
+  # IL TUO DATABASE PRINCIPALE (Postgres)
+  db:
+    image: postgres:15
+    container_name: roomsplit_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=roomsplit_db
+    ports:
+      - "5432:5432" # Permette a PGAdmin di collegarsi al container!
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   backend:
     build: ./RoomSplit-be
     container_name: roomsplit_backend
@@ -10,14 +23,16 @@ services:
     environment:
       - DEBUG=1
       - DB_NAME=roomsplit_db
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_HOST=host.docker.internal
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=db
       - DB_PORT=5432
+    depends_on:
+      - db
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  # SEZIONE SONARQUBE
+  # SEZIONE SONARQUBE LOCALE
   sonarqube:
     image: sonarqube:community
     container_name: roomsplit_sonarqube
@@ -49,3 +64,4 @@ volumes:
   sonarqube_logs:
   sonarqube_extensions:
   postgres_sonar_data:
+  postgres_data:

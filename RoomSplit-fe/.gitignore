@@ -19,6 +19,9 @@ web-build/
 # Metro
 .metro-health-check*
 
+# JetBrains IDEs
+.idea/
+
 # debug
 npm-debug.*
 yarn-debug.*
@@ -30,6 +33,7 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
 
 # typescript
 *.tsbuildinfo
