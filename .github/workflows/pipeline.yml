@@ -47,6 +47,9 @@ jobs:
       - name: Esegui i test Django con pytest
         run: docker compose exec -T -u root backend pytest --cov=. --cov-report=xml
 
+      - name: Correggi i percorsi nel coverage.xml per SonarCloud
+        run: sudo sed -i 's|/app|/github/workspace/RoomSplit-be|g' RoomSplit-be/coverage.xml
+
       # Analisi SonarCloud
       - name: Scansione SonarCloud
         uses: SonarSource/sonarcloud-github-action@v3
