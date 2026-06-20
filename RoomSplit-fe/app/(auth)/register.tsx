@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { SocialConnections } from '@/components/social-connections';
 import { useAuth } from '@/context/AuthContext';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -61,10 +60,8 @@ export default function RegisterScreen() {
           {/* ALERT DI SUCCESSO */}
           {successMessage ? (
             <View className="bg-emerald-50 border border-emerald-200 dark:bg-emerald-500/10 dark:border-emerald-500/30 rounded-xl p-3 flex-row items-start shadow-sm">
-              {/* flex-shrink-0 impedisce all'icona di schiacciarsi se il testo è lungo */}
               <CheckCircle2 size={20} color="#10b981" className="mt-0.5 flex-shrink-0" />
               
-              {/* flex-1 permette al testo di occupare il resto dello spazio e andare a capo */}
               <View className="flex-1 ml-3">
                 <Text className="text-emerald-800 dark:text-emerald-400 font-bold text-sm">
                   Registrazione Riuscita
@@ -76,7 +73,7 @@ export default function RegisterScreen() {
             </View>
           ) : null}
 
-          {/* ALERT DI ERRORE OTTIMIZZATO */}
+          {/* ALERT DI ERRORE */}
           {serverError ? (
              <View className="bg-red-50 border border-red-200 dark:bg-red-500/10 dark:border-red-500/30 rounded-xl p-3 flex-row items-start shadow-sm">
                <AlertCircle size={20} color="#ef4444" className="mt-0.5 flex-shrink-0" />
@@ -192,7 +189,7 @@ export default function RegisterScreen() {
             </Text>
           </Button>
 
-          <View className="flex-row items-center my-4">
+          {/* <View className="flex-row items-center my-4">
             <View className="flex-1 h-[1px] bg-slate-300 dark:bg-slate-700" />
             <Text className="mx-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">
               Oppure
@@ -200,7 +197,7 @@ export default function RegisterScreen() {
             <View className="flex-1 h-[1px] bg-slate-300 dark:bg-slate-700" />
           </View>
 
-          <SocialConnections />
+          <SocialConnections /> */}
         </CardFooter>
       </Card>
     </View>

@@ -51,7 +51,6 @@ class StatisticheMensiliView(APIView):
             ),
             400: OpenApiTypes.OBJECT,
             403: OpenApiTypes.OBJECT,
-            404: OpenApiTypes.OBJECT,
         }
     )
     def get(self, request, *args, **kwargs):
@@ -62,8 +61,14 @@ class StatisticheMensiliView(APIView):
         # Recupera gli ID di tutti i gruppi a cui appartiene l'utente loggato
         gruppi_utente_ids = Membro.objects.filter(user=request.user).values_list('gruppo_id', flat=True)
 
+        # FIX: Invece di 404, restituiamo un JSON valido con dati a 0
         if not gruppi_utente_ids:
-            return Response({"errore": "L'utente non appartiene ad alcun gruppo"}, status=404)
+            return Response({
+                "periodo": f"{mese:02d}/{anno}",
+                "totale_speso": 0,
+                "spese_per_categoria": [],
+                "spesa_maggiore": None
+            }, status=200)
 
         # Se viene passato un ID specifico
         if gruppo_id and gruppo_id != 'all':
@@ -140,11 +145,12 @@ class StatisticheAnnualiView(APIView):
             ),
             400: OpenApiTypes.OBJECT,
             403: OpenApiTypes.OBJECT,
-            404: OpenApiTypes.OBJECT,
         }
     )
     def get(self, request, *args, **kwargs):
         gruppo_id_str = request.query_params.get('gruppo_id')
+        # Sposto la definizione dell'anno all'inizio per poterla usare nella risposta vuota
+        anno = int(request.query_params.get('anno', timezone.now().year))
         
         gruppo_uuid = None
         if gruppo_id_str and gruppo_id_str != 'all':
@@ -156,7 +162,13 @@ class StatisticheAnnualiView(APIView):
         gruppi_utente_ids = Membro.objects.filter(user=request.user).values_list('gruppo_id', flat=True)
 
         if not gruppi_utente_ids:
-            return Response({"errore": "L'utente non appartiene ad alcun gruppo"}, status=404)
+            return Response({
+                "anno": anno,
+                "totale_anno": 0,
+                "andamento_mensile": [
+                    {"mese": mese, "totale": 0} for mese in range(1, 13)
+                ]
+            }, status=200)
 
         if gruppo_uuid:
             if gruppo_uuid not in gruppi_utente_ids:
@@ -164,8 +176,6 @@ class StatisticheAnnualiView(APIView):
             filtro_gruppi = [gruppo_uuid]
         else:
             filtro_gruppi = gruppi_utente_ids
-
-        anno = int(request.query_params.get('anno', timezone.now().year))
 
         spese_anno = GruppoSpesa.objects.filter(
             gruppo_id__in=filtro_gruppi,

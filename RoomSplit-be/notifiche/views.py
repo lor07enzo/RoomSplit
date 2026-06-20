@@ -74,7 +74,7 @@ class TelegramWebhookView(APIView):
                     profilo.save()
                     
                     messaggio_conferma = (
-                        f"<b>Perfetto {profilo.user.nome}!</b>\n\n"
+                        f"<b>🎉Perfetto {profilo.user.nome}!</b>\n\n"
                         "Il tuo account RoomSplit è stato ricollegato con successo.\n"
                         "Da ora in poi riceverai qui le notifiche importanti sulle spese."
                     )

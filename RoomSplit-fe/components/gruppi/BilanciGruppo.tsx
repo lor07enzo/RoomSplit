@@ -18,16 +18,45 @@ export default function BilanciGruppoScreen({ saldi, loading, currentUserId, onS
     return saldi.find(s => s.utente_id === currentUserId);
   }, [saldi, currentUserId]);
 
-  // Filtra gli altri membri
-  const altriSaldi = useMemo(() => {
-    if (!saldi) return [];
-    return saldi.filter(s => s.utente_id !== currentUserId);
-  }, [saldi, currentUserId]);
-
   // Calcola il totale speso da tutto il gruppo
   const totaleGruppo = useMemo(() => {
     return saldi.reduce((acc, curr) => acc + (parseFloat(curr.pagato_totale as any) || 0), 0);
   }, [saldi]);
+
+  // Calcola solo i debiti/crediti diretti con l'utente corrente
+  const relazioniDirette = useMemo(() => {
+    if (!saldi || !mioSaldo || Math.abs(mioSaldo.bilancio) < 0.01) return [];
+
+    const result = [];
+    const sonoInDebitoIo = mioSaldo.bilancio < 0;
+
+    for (const membro of saldi) {
+      if (membro.utente_id === currentUserId) continue;
+
+      const suoBilancio = parseFloat(membro.bilancio as any) || 0;
+      if (Math.abs(suoBilancio) < 0.01) continue;
+
+      const eInDebitoLui = suoBilancio < 0;
+
+      if (sonoInDebitoIo === eInDebitoLui) continue;
+
+      const importoCompensabile = Math.min(
+        Math.abs(mioSaldo.bilancio),
+        Math.abs(suoBilancio)
+      );
+
+      result.push({
+        membroOriginale: membro,
+        nome: membro.nome,
+        importoCompensabile,
+        isDebt: sonoInDebitoIo, 
+        isCredit: !sonoInDebitoIo
+      });
+    }
+
+    // Ordina dal debito/credito più alto al più basso
+    return result.sort((a, b) => b.importoCompensabile - a.importoCompensabile);
+  }, [saldi, currentUserId, mioSaldo]);
 
   if (loading) {
     return (
@@ -76,30 +105,30 @@ export default function BilanciGruppoScreen({ saldi, loading, currentUserId, onS
 
         {/* LISTA MEMBRI */}
         <View className="p-2">
-          {altriSaldi.map((membro, index) => {
-            const bilancio = parseFloat(membro.bilancio as any) || 0;
-            const isCredit = bilancio > 0;
-            const isDebt = bilancio < 0;
-            const isBordered = index !== altriSaldi.length - 1;
+          {relazioniDirette.map((relazione, index) => {
+            const isBordered = index !== relazioniDirette.length - 1;
 
             return (
               <View 
-                key={membro.utente_id} 
+                key={relazione.membroOriginale.utente_id} 
                 className={`flex-row items-center justify-between p-3 ${isBordered ? 'border-b border-slate-50 dark:border-slate-700/50' : ''}`}
               >
                 <View className="flex-row items-center flex-1">
-                  <View className={`w-2.5 h-2.5 rounded-full mr-3 ${isCredit ? 'bg-emerald-500' : isDebt ? 'bg-orange-500' : 'bg-slate-300'}`} />
+                  <View className={`w-2.5 h-2.5 rounded-full mr-3 ${relazione.isCredit ? 'bg-emerald-500' : 'bg-orange-500'}`} />
                   <View>
-                    <Text className="text-slate-800 dark:text-slate-200 font-semibold text-base">{membro.nome}</Text>
-                    <Text className={`text-xs font-medium ${isCredit ? 'text-emerald-600 dark:text-emerald-400' : isDebt ? 'text-orange-600 dark:text-orange-400' : 'text-slate-400'}`}>
-                      {isCredit ? `Riceve €${bilancio.toFixed(2)}` : isDebt ? `Deve €${Math.abs(bilancio).toFixed(2)}` : 'In pari'}
+                    <Text className="text-slate-800 dark:text-slate-200 font-semibold text-base">{relazione.nome}</Text>
+                    <Text className={`text-xs font-medium ${relazione.isCredit ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-600 dark:text-orange-400'}`}>
+                      {relazione.isCredit 
+                        ? `Ti deve €${relazione.importoCompensabile.toFixed(2)}` 
+                        : `Gli devi €${relazione.importoCompensabile.toFixed(2)}`}
                     </Text>
                   </View>
                 </View>
 
-                {mioSaldo && mioSaldo.bilancio < 0 && isCredit && (
+                {/* Il bottone Salda appare solo se io sono in debito verso di lui */}
+                {relazione.isDebt && (
                   <TouchableOpacity 
-                    onPress={() => onSaldaPress(membro)}
+                    onPress={() => onSaldaPress(relazione.membroOriginale)}
                     className="bg-slate-900 dark:bg-blue-600 px-4 py-2 rounded-lg flex-row items-center active:scale-95"
                   >
                     <Wallet size={14} color="white" className="mr-1.5" />
@@ -110,8 +139,13 @@ export default function BilanciGruppoScreen({ saldi, loading, currentUserId, onS
             );
           })}
           
-          {altriSaldi.length === 0 && (
-            <Text className="text-center text-slate-400 text-sm py-4 italic">Nessun altro membro nel gruppo.</Text>
+          {/* Fallback quando l'array filtrato è vuoto */}
+          {relazioniDirette.length === 0 && (
+            <Text className="text-center text-slate-400 text-sm py-4 italic">
+              {mioSaldo && Math.abs(mioSaldo.bilancio) < 0.01 
+                ? 'Sei in pari. Non hai pendenze con gli altri coinquilini.' 
+                : 'Nessun debito/credito diretto rilevato.'}
+            </Text>
           )}
         </View>
       </View>

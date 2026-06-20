@@ -325,7 +325,8 @@ export default function GruppoDetailScreen() {
 
             {/* STORICO DELLE SPESE DEL GRUPPO */}
             <StoricoSpeseGruppo 
-              spese={speseDelGruppo} 
+              spese={speseDelGruppo}
+              membriGruppo={membri}
               onSpesaPress={(spesaId) => router.push(`/spesa/${spesaId}`)} 
             />
 

@@ -119,7 +119,7 @@ export const StatistichePersonaliWidget: React.FC<StatistichePersonaliWidgetProp
         </Text>
 
         {statistichePersonali.totale_uscita_mensile > 0 ? (
-          <View className="items-center justify-center py-4 -ml-2">
+          <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 16 }}>
             <VictoryChart
               key={`personal-month-${currentMonth}-${currentYear}`}
               theme={VictoryTheme.material}

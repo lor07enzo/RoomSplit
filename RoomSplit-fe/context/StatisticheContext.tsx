@@ -1,10 +1,8 @@
 import React, { createContext, useCallback, useContext, useState } from 'react';
 import { StatisticheService } from '@/services/statistiche';
-import { SaldoMembro, StatisticheAnnualiResponse, StatisticheMensiliResponse, StatistichePersonaliResponse } from '@/types/types';
+import { StatisticheAnnualiResponse, StatisticheMensiliResponse, StatistichePersonaliResponse } from '@/types/types';
 
 interface StatisticheContextType {
-    saldi: SaldoMembro[];
-    loadingSaldi: boolean;
     statisticheMensili: StatisticheMensiliResponse | null;
     statisticheAnnuali: StatisticheAnnualiResponse | null;
     statistichePersonali: StatistichePersonaliResponse | null;
@@ -16,8 +14,6 @@ interface StatisticheContextType {
 const StatisticheContext = createContext<StatisticheContextType | undefined>(undefined);
 
 export function StatisticheProvider({ children }: { children: React.ReactNode }) {
-    const [saldi, setSaldi] = useState<SaldoMembro[]>([]);
-    const [loadingSaldi, setLoadingSaldi] = useState(true);
     const [statisticheMensili, setStatisticheMensili] = useState<StatisticheMensiliResponse | null>(null);
     const [statisticheAnnuali, setStatisticheAnnuali] = useState<StatisticheAnnualiResponse | null>(null);
     const [statistichePersonali, setStatistichePersonali] = useState<StatistichePersonaliResponse | null>(null);
@@ -51,7 +47,7 @@ export function StatisticheProvider({ children }: { children: React.ReactNode })
 
     return (
         <StatisticheContext.Provider value={{ 
-            saldi, loadingSaldi, statisticheMensili, statisticheAnnuali, statistichePersonali,
+           statisticheMensili, statisticheAnnuali, statistichePersonali,
             fetchMensili, fetchAnnuali, fetchPersonali
         }}>
             {children}

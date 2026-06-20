@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { ReceiptText, ArrowRight, ChevronDown, ChevronUp } from 'lucide-react-native';
-import { GruppoSpesa } from '@/types/types';
+import { GruppoSpesa, Membro } from '@/types/types';
 
 interface StoricoSpeseGruppoProps {
     spese: GruppoSpesa[];
+    membriGruppo: Membro[];
     onSpesaPress: (id: string) => void;
 }
 
-export default function StoricoSpeseGruppo({ spese, onSpesaPress }: StoricoSpeseGruppoProps) {
+export default function StoricoSpeseGruppo({ spese, membriGruppo, onSpesaPress }: StoricoSpeseGruppoProps) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const speseDaMostrare = isExpanded ? spese : spese.slice(0, 3);
@@ -36,6 +37,18 @@ export default function StoricoSpeseGruppo({ spese, onSpesaPress }: StoricoSpese
                                 month: 'short',
                             });
 
+                            // Estraggo il nome del pagatore
+                            const creatore = spesa.pagatore || spesa.user;
+                            const idAutore = typeof creatore === 'string' ? creatore : creatore?.id;
+
+                            const membroTrovato = membriGruppo.find(m => 
+                                m.user?.id === idAutore || (m.user as unknown as string) === idAutore
+                            );
+
+                            const nomePagatore = membroTrovato 
+                                ? `${membroTrovato.user.nome} ${membroTrovato.user.cognome}`.trim() 
+                                : 'Membro del gruppo';
+
                             return (
                                 <TouchableOpacity
                                     key={spesa.id}
@@ -55,6 +68,11 @@ export default function StoricoSpeseGruppo({ spese, onSpesaPress }: StoricoSpese
                                             </Text>
                                             <Text className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5" numberOfLines={1}>
                                                 {spesa.descrizione || 'Nessuna descrizione'}
+                                            </Text>
+                                            
+                                            {/* Etichetta Pagatore */}
+                                            <Text className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 mt-1 uppercase tracking-wide" numberOfLines={1}>
+                                                Pagato da: {nomePagatore}
                                             </Text>
                                         </View>
                                     </View>

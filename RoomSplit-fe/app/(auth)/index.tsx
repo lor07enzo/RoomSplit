@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { SocialConnections } from '@/components/social-connections';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -155,13 +154,13 @@ export default function LoginScreen() {
             </Text>
           </Button>
 
-          <View className="flex-row items-center my-4">
+          {/* <View className="flex-row items-center my-4">
             <View className="flex-1 h-[1px] bg-slate-300 dark:bg-slate-700" />
             <Text className="mx-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase">Oppure</Text>
             <View className="flex-1 h-[1px] bg-slate-300 dark:bg-slate-700" />
           </View>
 
-          <SocialConnections />
+          <SocialConnections /> */}
         </CardFooter>
       </Card>
       

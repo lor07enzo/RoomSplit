@@ -1,5 +1,4 @@
-import { ScrollView, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import { Text } from '@/components/ui/text';
+import { ScrollView, TouchableOpacity, View, Text, useWindowDimensions, ActivityIndicator } from 'react-native';
 import { useAuth } from '@/context/AuthContext';
 import { useSpese } from '@/context/SpeseContext';
 import { useGruppi } from '@/context/GruppiContext';
@@ -12,20 +11,6 @@ import { SpeseRicorrentiWidget } from '@/components/dashboard/SpeseRicorrentiWid
 import { SaldiDebitiWidget } from '@/components/dashboard/SaldiDebitiWidget';
 import { StoricoRimborsiWidget } from '@/components/dashboard/StoricoRimborsiWidget';
 
-interface DettaglioGruppo {
-    gruppo_id: string;
-    mio_membro_id: string;
-    suo_membro_id: string;
-    suo_bilancio_nel_gruppo: number;
-    mio_bilancio_nel_gruppo: number;
-}
-
-interface SaldoAggregato {
-    utente_id: string;
-    nome: string;
-    bilancio_netto: number;
-    dettagli_gruppi: DettaglioGruppo[];
-}
 
 export default function DashboardScreen() {
     const router = useRouter();
@@ -36,7 +21,7 @@ export default function DashboardScreen() {
     const isTablet = width >= 768;
 
     const [viewMode, setViewMode] = useState<'gruppo' | 'personali'>('gruppo');
-    const [gruppoAttivoId, setGruppoAttivoId] = useState<string | null>(null);
+    const [isTransitioning, setIsTransitioning] = useState(false);
     const [loadingSaldi, setLoadingSaldi] = useState(true);
 
     useEffect(() => {
@@ -69,6 +54,17 @@ export default function DashboardScreen() {
 
     const staCaricandoDati = isLoadingGruppi || loadingSaldi;
 
+    const handleTabChange = (mode: 'gruppo' | 'personali') => {
+        if (mode === viewMode) return;
+        
+        setIsTransitioning(true);
+        setViewMode(mode); 
+        
+        setTimeout(() => {
+            setIsTransitioning(false);
+        }, 50); 
+    };
+
     return (
         <View className="flex-1 bg-slate-50 dark:bg-slate-900">
             <ScrollView className="flex-1 px-4 pt-4" showsVerticalScrollIndicator={false}>
@@ -77,14 +73,14 @@ export default function DashboardScreen() {
                 <View className="flex-row items-center mb-6">
                     <View className="flex-row items-center bg-slate-200 dark:bg-slate-800 rounded-lg p-1 flex-1">
                         <TouchableOpacity 
-                          onPress={() => setViewMode('gruppo')}
+                          onPress={() => handleTabChange('gruppo')}
                           className={`flex-1 py-2 rounded-md items-center ${viewMode === 'gruppo' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
                         >
                             <Text className={`font-semibold ${viewMode === 'gruppo' ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>Di Gruppo</Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity 
-                          onPress={() => setViewMode('personali')}
+                          onPress={() => handleTabChange('personali')}
                           className={`flex-1 py-2 rounded-md items-center ${viewMode === 'personali' ? 'bg-white dark:bg-slate-700 shadow-sm' : ''}`}
                         >
                             <Text className={`font-semibold ${viewMode === 'personali' ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>Personali</Text>
@@ -107,7 +103,9 @@ export default function DashboardScreen() {
 
                         {/* STORICO RIMBORSI */}
                         {viewMode === 'personali' && (
-                            <StoricoRimborsiWidget />
+                            <View className="mb-4">
+                                <StoricoRimborsiWidget />
+                            </View>
                         )}
 
                     </View>
@@ -119,8 +117,12 @@ export default function DashboardScreen() {
                                 {viewMode === 'gruppo' ? "Analisi Finanziaria (Tutti i Gruppi)" : "Le Tue Spese Private"}
                             </Text>
                             
-                            {viewMode === 'gruppo' ? (
-                                <StatisticheWidget gruppoId={gruppoAttivoId || "all"} />
+                            {isTransitioning ? (
+                                <View className="h-64 items-center justify-center">
+                                    <ActivityIndicator size="small" color="#4F46E5" />
+                                </View>
+                            ) : viewMode === 'gruppo' ? (
+                                <StatisticheWidget gruppoId={ "all"} />
                             ) : (
                                 <StatistichePersonaliWidget userId={user?.id || ""} />
                             )}

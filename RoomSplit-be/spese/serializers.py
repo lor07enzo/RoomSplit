@@ -11,12 +11,16 @@ class CategoriaSerializer(serializers.ModelSerializer):
         model = Categoria
         fields = ("id", "nome", "icona", "colore")
 
-class GruppoSpesaSerializer(serializers.ModelSerializer):
+# Serializer per l'utente semplificato, usato in GruppoSpesaSerializer
+class UserSempliceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'nome', 'cognome', 'avatar']
 
-    categoria = serializers.SlugRelatedField(
-        slug_field='nome',
-        queryset=Categoria.objects.all()
-    )
+class GruppoSpesaSerializer(serializers.ModelSerializer):
+    categoria = serializers.SlugRelatedField( slug_field='nome', queryset=Categoria.objects.all())
+    user = UserSempliceSerializer(read_only=True)
+    pagatore = UserSempliceSerializer(read_only=True)
 
     class Meta:
         model = GruppoSpesa

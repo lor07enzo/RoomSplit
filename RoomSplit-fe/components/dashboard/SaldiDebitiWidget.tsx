@@ -55,28 +55,41 @@ export function SaldiDebitiWidget({ staCaricandoDati }: SaldiDebitiWidgetProps) 
 
         Object.entries(saldiPerGruppo).forEach(([gruppoId, saldi]) => {
             const mioSaldo = saldi.find(s => s.utente_id === user.id);
-            if (!mioSaldo) return;
+            
+            if (!mioSaldo || Math.abs(mioSaldo.bilancio) < 0.01) return;
 
-            saldi.forEach(saldo => {
-                if (saldo.utente_id === user.id) return;
+            saldi.forEach(suoSaldo => {
+                if (suoSaldo.utente_id === user.id || Math.abs(suoSaldo.bilancio) < 0.01) return;
 
-                const esistente = mappa.get(saldo.utente_id);
+                const sonoInDebitoIo = mioSaldo.bilancio < 0;
+                const eInDebitoLui = suoSaldo.bilancio < 0;
+
+                if (sonoInDebitoIo === eInDebitoLui) return;
+
+                const importoCompensabile = Math.min(
+                    Math.abs(mioSaldo.bilancio),
+                    Math.abs(suoSaldo.bilancio)
+                );
+
+                const deltaNetto = sonoInDebitoIo ? importoCompensabile : -importoCompensabile;
+
+                const esistente = mappa.get(suoSaldo.utente_id);
                 const dettaglio: DettaglioGruppo = {
                     gruppo_id: gruppoId,
                     mio_membro_id: mioSaldo.membro_id,
-                    suo_membro_id: saldo.membro_id,
-                    suo_bilancio_nel_gruppo: saldo.bilancio,
+                    suo_membro_id: suoSaldo.membro_id,
+                    suo_bilancio_nel_gruppo: suoSaldo.bilancio,
                     mio_bilancio_nel_gruppo: mioSaldo.bilancio,
                 };
 
                 if (esistente) {
-                    esistente.bilancio_netto += saldo.bilancio;
+                    esistente.bilancio_netto += deltaNetto;
                     esistente.dettagli_gruppi.push(dettaglio);
                 } else {
-                    mappa.set(saldo.utente_id, {
-                        utente_id: saldo.utente_id,
-                        nome: saldo.nome,
-                        bilancio_netto: saldo.bilancio,
+                    mappa.set(suoSaldo.utente_id, {
+                        utente_id: suoSaldo.utente_id,
+                        nome: suoSaldo.nome,
+                        bilancio_netto: deltaNetto,
                         dettagli_gruppi: [dettaglio]
                     });
                 }

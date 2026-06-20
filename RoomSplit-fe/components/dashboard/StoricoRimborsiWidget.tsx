@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { Text } from '@/components/ui/text';
+import { View, Text, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { useSpese } from '@/context/SpeseContext';
 import { useAuth } from '@/context/AuthContext';
 import { ArrowUpRight, ArrowDownRight, Banknote, CreditCard, Wallet, ChevronDown, ChevronUp } from 'lucide-react-native';
 import { Rimborso } from '@/types/types';
+import { useColorScheme } from 'nativewind';
 
 export function StoricoRimborsiWidget() {
     const { user } = useAuth();
     const { rimborsi, isLoadingRimborsi, fetchRimborsiPersonali } = useSpese();
     const [isExpanded, setIsExpanded] = useState(false);
+
+    const { colorScheme } = useColorScheme();
+    const isDark = colorScheme === 'dark';
+    const iconColor = isDark ? '#94a3b8' : '#64748b';
 
     useEffect(() => {
         if (fetchRimborsiPersonali) {
@@ -19,10 +23,10 @@ export function StoricoRimborsiWidget() {
 
     const getMetodoIcon = (tipologia: 'contanti' | 'paypal' | 'stripe') => {
         switch (tipologia) {
-            case 'contanti': return <Banknote size={14} className="text-slate-500 dark:text-slate-400" />;
-            case 'paypal': return <Wallet size={14} className="text-slate-500 dark:text-slate-400" />;
-            case 'stripe': return <CreditCard size={14} className="text-slate-500 dark:text-slate-400" />;
-            default: return <Banknote size={14} className="text-slate-500 dark:text-slate-400" />;
+            case 'contanti': return <Banknote size={14} color={iconColor} />;
+            case 'paypal': return <Wallet size={14} color={iconColor} />;
+            case 'stripe': return <CreditCard size={14} color={iconColor} />;
+            default: return <Banknote size={14} color={iconColor} />;
         }
     };
 
@@ -46,7 +50,6 @@ export function StoricoRimborsiWidget() {
         );
     }
 
-    // Determino quanti rimborsi mostrare: tutti se espanso, altrimenti solo i primi 2
     const rimborsiDaMostrare = isExpanded ? rimborsi : rimborsi.slice(0, 2);
 
     return (

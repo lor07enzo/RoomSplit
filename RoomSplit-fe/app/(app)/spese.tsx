@@ -3,27 +3,50 @@ import { View, Text, FlatList, TouchableOpacity, TextInput, ActivityIndicator } 
 import { Search, Plus, Receipt } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useSpese } from '@/context/SpeseContext';
+import { useAuth } from '@/context/AuthContext';
 import SpesaItem from '@/components/spese/SpesaItem';
 
 export default function SpeseScreen() {
   const router = useRouter();
   const { spese, isLoading } = useSpese(); 
+  const { user } = useAuth();
   const [filter, setFilter] = useState<'tutte' | 'gruppo' | 'personali'>('tutte');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Logica per filtrare le spese in base alla ricerca e ai tab
+  // Logica per filtrare le spese in base all'utente, alla ricerca e ai tab
   const speseFiltrate = useMemo(() => {
+    if (!user || !user.id) return [];
+
+    const mioId = String(user.id).toLowerCase();
+
+    const estraiUtente = (campo: any): string | null => {
+      if (!campo) return null;
+      if (typeof campo === 'string') return campo.toLowerCase();
+      if (campo.id && typeof campo.id === 'string') return campo.id.toLowerCase();
+      return null;
+    };
+
     return spese.filter(spesa => {
+      // FILTRO UTENTE
+      const spesaUserId = estraiUtente(spesa.user);
+      const pagatoreId = estraiUtente(spesa.pagatore);
+
+      const isMiaSpesa = spesaUserId === mioId || pagatoreId === mioId;
+
+      if (!isMiaSpesa) return false;
+
+      // FILTRO RICERCA
       const testoSpesa = `${spesa.nome} ${spesa.descrizione || ''}`.toLowerCase();
       const matchSearch = testoSpesa.includes(searchQuery.toLowerCase());
       
+      // FILTRO TAB LOGICI
       const matchFilter = 
         filter === 'tutte' ? true : 
         filter === 'personali' ? spesa.is_personale : !spesa.is_personale;
         
       return matchSearch && matchFilter;
     });
-  }, [spese, searchQuery, filter]);
+  }, [spese, searchQuery, filter, user]);
 
   return (
     <View className="flex-1 bg-slate-50 dark:bg-slate-900">
@@ -74,7 +97,11 @@ export default function SpeseScreen() {
           ListEmptyComponent={
             <View className="items-center justify-center pt-20">
               <Receipt size={48} color="#cbd5e1" />
-              <Text className="text-slate-400 mt-4">Nessuna spesa trovata</Text>
+              <Text className="text-slate-400 mt-4 text-center">
+                {searchQuery 
+                  ? "Nessuna spesa corrisponde alla tua ricerca" 
+                  : "Non hai ancora inserito nessuna spesa in questa sezione"}
+              </Text>
             </View>
           }
         />
