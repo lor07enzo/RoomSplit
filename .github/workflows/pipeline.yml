@@ -81,6 +81,15 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         run: snyk monitor --file=RoomSplit-be/requirements.txt --package-manager=pip
 
+      # INTEGRAZIONE SNYK (Analisi Dipendenze Frontend)
+      - name: Snyk Monitor (Frontend)
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: monitor
+          args: --file=RoomSplit-fe/package.json
+
       # Setup e Delivery su Docker Hub
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -96,7 +105,7 @@ jobs:
         uses: docker/build-push-action@v5    
         with:
           context: ./RoomSplit-be
-          load: true # Carica l'immagine nel demone Docker locale invece di fare push
+          load: true # Carica l'immagine nel Docker locale invece di fare push
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/roomsplit-backend:latest
 
       # INTEGRAZIONE SNYK (Analisi Immagine Docker)
@@ -107,7 +116,7 @@ jobs:
         with:
           image: ${{ secrets.DOCKERHUB_USERNAME }}/roomsplit-backend:latest
           args: --file=RoomSplit-be/Dockerfile
-          # Continua anche se trova vulnerabilità per non bloccare il deploy all'inizio
+          command: monitor
         continue-on-error: true 
 
       # Push dell'immagine su Docker Hub se tutto è andato a buon fine
