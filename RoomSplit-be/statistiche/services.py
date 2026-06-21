@@ -1,16 +1,15 @@
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
 from django.conf import settings
+from django.utils import timezone
 from openai import OpenAI
-
-# Importa il modello dalla tua app spese (assicurati che l'app si chiami 'spese')
 from spese.models import GruppoSpesa
 
 def get_historical_context(group_id):
     """Estrae lo storico degli ultimi 6 mesi e le spese ricorrenti dai modelli reali"""
-    six_months_ago = datetime.now() - timedelta(days=180)
+    six_months_ago = timezone.now() - timedelta(days=180)
     
     # Aggrega le spese singole passate (non ricorrenti e non personali)
     historical_query = (
