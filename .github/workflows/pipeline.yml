@@ -82,13 +82,19 @@ jobs:
         run: snyk monitor --file=RoomSplit-be/requirements.txt --package-manager=pip
 
       # INTEGRAZIONE SNYK (Analisi Dipendenze Frontend)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Installa dipendenze Frontend
+        working-directory: ./RoomSplit-fe
+        run: npm install
+
       - name: Snyk Monitor (Frontend)
-        uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: monitor
-          args: --file=RoomSplit-fe/package.json
+        run: snyk monitor --file=RoomSplit-fe/package.json
 
       # Setup e Delivery su Docker Hub
       - name: Setup Docker Buildx
