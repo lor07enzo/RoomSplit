@@ -58,7 +58,6 @@ INSTALLED_APPS = [
     'documenti',
     'statistiche',
     'notifiche',
-    'pagamenti',
 ]
 
 REST_FRAMEWORK = {

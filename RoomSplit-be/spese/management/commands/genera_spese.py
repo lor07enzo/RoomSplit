@@ -20,7 +20,7 @@ class Command(BaseCommand):
             if spesa.prossimo_pagamento:
                 data_riferimento = spesa.prossimo_pagamento
                 if isinstance(data_riferimento, datetime.datetime):
-                    data_riferimento = data_riferimento.date()
+                    data_riferimento = timezone.localtime(data_riferimento).date()
             else:
                 data_riferimento = spesa.created_at.date() if spesa.created_at else oggi
 
@@ -64,8 +64,7 @@ class Command(BaseCommand):
                 spesa.save()
 
                 # Genera l'istanza clone proiettata nel futuro
-                spesa.pk = None 
-                spesa.saldata = False 
+                spesa.pk = None
                 spesa.is_ricorrente = True
                 
                 # Calcola la nuova scadenza, la rende aware e la assegna al clone
