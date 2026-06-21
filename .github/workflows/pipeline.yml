@@ -83,7 +83,7 @@ jobs:
 
       # Buildiamo l'immagine localmente per farla scansionare a Snyk prima del push
       - name: Build dell'immagine Docker (Locale)
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v5    
         with:
           context: ./RoomSplit-be
           load: true # Carica l'immagine nel demone Docker locale invece di fare push
