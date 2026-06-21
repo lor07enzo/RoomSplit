@@ -6,8 +6,10 @@ on:
       - main
     paths:
       - 'RoomSplit-be/**'
+      - 'RoomSplit-fe/**'
       - '.github/workflows/pipeline.yml'
       - 'docker-compose.yml'
+      - 'sonar-project.properties'
 
 jobs:
   test-and-delivery:
