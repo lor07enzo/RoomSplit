@@ -1,3 +1,4 @@
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -7,6 +8,8 @@ from django.utils import timezone
 from gruppi.models import Membro
 from spese.models import GruppoSpesa, Spesa
 import uuid 
+from .serializers import ExpenseForecastResponseSerializer
+from .services import generate_ai_expense_forecast
 
 from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
@@ -308,3 +311,31 @@ class StatistichePersonaliView(APIView):
             ]
         })
     
+class ExpenseForecastAPIView(APIView):
+    
+    @extend_schema(
+        summary="Ottieni previsioni di spesa AI",
+        description="Analizza l'andamento storico del gruppo di coinquilini per stimare i costi del mese successivo.",
+        responses={200: ExpenseForecastResponseSerializer}
+    )
+    def get(self, request, group_id):
+        try:
+            # Esecuzione del flusso del PoC
+            forecast_data = generate_ai_expense_forecast(group_id)
+            
+            # Validazione formale tramite serializer prima dell'invio al client
+            serializer = ExpenseForecastResponseSerializer(data=forecast_data)
+            if serializer.is_valid():
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            # Gestione dell'errore nel caso l'AI fallisca il formato JSON richiesto
+            return Response(
+                {"error": "L'AI ha generato dati non conformi allo schema richiesto.", "details": serializer.errors}, 
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+            
+        except Exception as e:
+            return Response(
+                {"error": f"Errore durante la generazione del report predittivo: {str(e)}"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

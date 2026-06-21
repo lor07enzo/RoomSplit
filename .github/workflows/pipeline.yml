@@ -61,6 +61,16 @@ jobs:
       - name: Spegni i container
         run: docker compose down
 
+      # INTEGRAZIONE SNYK (Analisi Dipendenze Python)
+      - name: Setup Snyk per Python
+        uses: snyk/actions/python@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          # 'monitor' carica i risultati sulla dashboard. 
+          command: monitor 
+          args: --file=RoomSplit-be/requirements.txt
+
       # Setup e Delivery su Docker Hub
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -71,7 +81,27 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build e Push dell'immagine del Backend
+      # Buildiamo l'immagine localmente per farla scansionare a Snyk prima del push
+      - name: Build dell'immagine Docker (Locale)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./RoomSplit-be
+          load: true # Carica l'immagine nel demone Docker locale invece di fare push
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/roomsplit-backend:latest
+
+      # INTEGRAZIONE SNYK (Analisi Immagine Docker)
+      - name: Snyk Docker Scan
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          image: ${{ secrets.DOCKERHUB_USERNAME }}/roomsplit-backend:latest
+          args: --file=RoomSplit-be/Dockerfile
+          # Continua anche se trova vulnerabilità per non bloccare il deploy all'inizio
+        continue-on-error: true 
+
+      # Push dell'immagine su Docker Hub se tutto è andato a buon fine
+      - name: Push dell'immagine del Backend
         uses: docker/build-push-action@v5
         with:
           context: ./RoomSplit-be

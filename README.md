@@ -1,333 +1,566 @@
-# 🏠 RoomSplit — App Mobile e Webapp per Studenti Fuorisede
+# 🏠 RoomSplit — Gestione Spese e Budget per Studenti Fuorisede
 
-## Indice
+> Un'applicazione moderna per gestire spese condivise, suddividere debiti e monitorare il budget tra coinquilini.
+
+## 📋 Indice
+
 1. [Descrizione del Progetto](#descrizione-del-progetto)
-2. [Funzionalità](#funzionalità)
-3. [Stack Tecnologico](#stack-tecnologico)
-4. [Architettura](#architettura)
-5. [Struttura del Database](#struttura-del-database)
-6. [API Endpoints](#api-endpoints)
-7. [Roadmap di Sviluppo](#roadmap-di-sviluppo)
+2. [Funzionalità Core (MVP)](#funzionalità-core-mvp)
+3. [Stack Tecnologico e Infrastruttura](#stack-tecnologico-e-infrastruttura)
+4. [Architettura di Sistema](#architettura-di-sistema)
+5. [Documentazione API Swagger](#documentazione-api-swagger)
+6. [API Endpoints Dettagliati](#api-endpoints-dettagliati)
+7. [Setup e Avvio Locale (Quickstart)](#setup-e-avvio-locale-quickstart)
+8. [Setup Ngrok per Webhook Telegram](#-setup-ngrok-per-webhook-telegram)
+9. [Testing e Quality Assurance](#-testing-e-quality-assurance)
+10. [Qualità del Codice con SonarQube](#-qualità-del-codice-con-sonarqube)
+11. [Diagrammi e Documentazione](#-diagrammi-e-documentazione)
+12. [Sviluppi Futuri e Roadmap](#-sviluppi-futuri-e-roadmap-fase-2)
 
 ---
 
-## Descrizione del Progetto
+## 📝 Descrizione del Progetto
 
-**RoomSplit** è un'app mobile e webapp pensata per studenti fuorisede che condividono un appartamento. Sviluppata con un approccio **Web-First** per garantire la massima accessibilità da browser, permette di gestire sia le **spese comuni** dell'appartamento (bollette, affitto, uscite, spesa, ecc.) da dividere con i coinquilini, sia le **spese personali** dell'utente in modo semplice e trasparente. Integra inoltre la possibilità di caricare documenti come bollette PDF sul cloud per l'estrazione automatica dei costi tramite AI.
+**RoomSplit** è una piattaforma gestionale pensata per studenti fuorisede che condividono un appartamento. Sviluppata con una solida architettura backend e un approccio **Web-First**, permette di gestire le spese comuni, calcolare i saldi netti tra coinquilini e storicizzare i documenti.
 
-### Obiettivi principali
-- Semplificare la gestione economica tra coinquilini
-- Automatizzare la lettura delle bollette tramite OCR/parsing PDF con storage in Cloud
-- Offrire statistiche mensili, annuali e budget personali
-- Fornire un sistema chiaro di debiti e crediti (Net Balance) tra utenti
+Il progetto si concentra sulla robustezza delle API, sull'elaborazione documentale in cloud (estrazione costi da PDF/Immagini) e sulla qualità dell'infrastruttura con logica **DevSecOps**, offrendo un client web reattivo.
 
----
-
-## Funzionalità
-
-### 👤 Gestione Utenti e Gruppi
-- Registrazione e login con email/password
-- Creazione di un **"appartamento"** (gruppo) con nome personalizzato
-- Invito dei coinquilini tramite **link** o **codice univoco**
-- Ruolo **amministratore** (capogruppo) e ruolo **membro**
-- Possibilità di lasciare o sciogliere un gruppo
-
-### 📄 Caricamento e Lettura Documenti
-- Upload di bollette in formato **PDF o immagine** (luce, gas, acqua, internet)
-- Estrazione automatica del **costo totale** tramite parsing del PDF (`pdfplumber`) o OCR (`pytesseract`) per immagini scansionate
-- **Conferma manuale** da parte dell'utente prima di salvare il dato estratto
-- Possibilità di correggere il valore estratto se errato
-
-### 💸 Gestione Spese Condivise e Personali
-Categorie di spesa supportate:
-| Categoria | Esempi |
-|---|---|
-| 🔌 Utenze | Luce, gas, acqua, internet |
-| 🚌 Trasporti | Abbonamento/Biglietto mezzi, benzina, parcheggio |
-| 🛒 Spesa alimentare | Supermercato, prodotti per la casa |
-| 🍕 Uscite | Ristoranti, cinema, serate |
-| 🏠 Affitto | Canone mensile |
-| 📦 Altro | Spese varie |
-
-Per ogni spesa è possibile:
-- Scegliere se è una **spesa condivisa** (legata all'appartamento) o una **spesa personale** (visibile solo all'utente)
-- Inserire importo, data, categoria e descrizione libera
-- (Se condivisa) Specificare **chi ha pagato** e scegliere tra divisione **equa** (per tutti) o **personalizzata** (solo per alcuni membri)
-- (Se condivisa) Segnare la spesa come **saldata**
-
-### ⚖️ Sistema Debiti e Crediti
-- Calcolo automatico di **chi deve cosa a chi** nel gruppo
-- Vista riepilogativa dei saldi per ogni membro
-- Possibilità di registrare un **rimborso** tra coinquilini
-- Storico delle transazioni e rimborsi
-
-### 📊 Statistiche
-**Mensili:**
-- Totale speso per categoria
-- Quota pro-capite del mese
-- Confronto con il mese precedente
-- Spesa maggiore del mese
-
-**Annuali:**
-- Andamento delle spese mese per mese (grafico a linee)
-- Totale per categoria nell'anno (grafico a torta)
-- Media mensile delle spese
-- Mese più costoso e meno costoso
-
-### 🛒 Lista della Spesa Condivisa
-- Lista condivisa e aggiornata in tempo reale tra tutti i coinquilini
-- Aggiunta, modifica e cancellazione di elementi
-- Spunta degli articoli già acquistati
-- Reset automatico dopo la conferma della spesa
-
-### 📤 Export Dati
-- Export del riepilogo spese mensile/annuale in **PDF**
-- Export in **Excel (.xlsx)** per analisi personali
-
-### 🔔 Notifiche e Bot
-- Notifica quando un coinquilino aggiunge una nuova spesa (Push, Telegram o WhatsApp)
-- Promemoria per spese ricorrenti (es. affitto mensile)
-- Avviso quando un debito supera una soglia personalizzabile
-- **Bot Telegram/WhatsApp**: Inserimento rapido di una spesa inviando un messaggio testuale o vocale al bot.
-
-### 🔮 Predizione Spese
-- Analisi dello storico delle bollette e dei trend di spesa per stimare i costi dei mesi successivi.
-- Previsione del budget necessario per affrontare il mese corrente senza andare in rosso.
-
-### 💳 Rimborsi In-App (Playground)
-- Integrazione (in modalità Sandbox/Test) con le API di **Stripe** e **PayPal**.
-- Simulazione del saldo dei debiti tra coinquilini con transazioni fittizie direttamente all'interno dell'app.
+### Obiettivi architetturali e di prodotto
+- ✅ Separazione netta delle responsabilità tra Client e API RESTful.
+- ✅ Elaborazione sicura dei documenti tramite pipeline OCR/Parsing in memoria.
+- ✅ **Modelli con UUID4**: Tutti i modelli Django utilizzano `UUIDField` come chiave primaria (ad eccezione delle notifiche Telegram) per prevenzione vulnerabilità IDOR e predisposizione alla sincronizzazione offline.
+- ✅ Gestione automatizzata e centralizzata dei debiti/crediti (Net Balance).
+- ✅ **Sicurezza DevSecOps**: Scansione continua del codice con SonarQube, gestione delle dipendenze e conformità.
+- ✅ **Nota sul Database**: La progettazione logica è documentata nei file UML e nei diagrammi ER dedicati.
 
 ---
 
-## Stack Tecnologico
+## Funzionalità Core (MVP)
 
-### Backend
-| Tecnologia | Versione consigliata | Utilizzo |
-|---|---|---|
-| **Python** | 3.13+ | Linguaggio principale |
-| **Django** | 6.x | Framework web, ORM, autenticazione |
-| **Django REST Framework** | 4.x | Creazione delle API REST |
-| **PostgreSQL** | 17 | Database relazionale principale |
-| **Cloudinary** | latest | Cloud storage per i file caricati (PDF, immagini) |
-| **django-cloudinary-storage** | latest | Integrazione storage Django-Cloudinary |
-| **django-background-task** | latest | Task asincrono per caricamento file in background |
-| **pdfplumber** | latest | Estrazione testo da PDF (Lettura in RAM) |
-| **pytesseract** | latest | OCR per immagini scansionate |
-| **Pillow** | latest | Manipolazione immagini pre-OCR |
-| **django-allauth** | latest | Login sociale (Google OAuth2) |
-| **python-telegram-bot** | latest | Integrazione bot Telegram (Pianificata) |
-| **stripe** / **paypal-checkout**| latest | SDK per pagamenti (Playground) |
+### 👤 Gestione Utenti e Gruppi (Appartamenti)
+- Sistema di autenticazione sicuro basato su token JWT.
+- Creazione di gruppi ("appartamenti") con gestione dei ruoli (Admin/Membro).
+- Meccanismo di invito tramite codice univoco.
 
-### Frontend (App Mobile & Web)
-| Tecnologia | Versione consigliata | Utilizzo |
-|---|---|---|
-| **React Native** | latest | Framework UI principale |
-| **Expo Router** | latest | File-system routing ottimizzato per il Web e Mobile |
-| **react-native-reusables**| latest | Libreria di componenti UI ispirata a shadcn/ui |
-| **NativeWind** | latest | Styling basato su Tailwind CSS |
-| **Axios** | latest | Chiamate HTTP asincrone alle API |
-| **React Hook Form** | latest | Gestione validazione form |
-| **React-native-victory** | latest | Visualizzazione grafici per statistiche |
+### 📄 Pipeline Documentale (Upload e OCR)
+- Integrazione di storage cloud per persistenza sicura di bollette e scontrini.
+- Estrazione automatizzata degli importi tramite `pdfplumber` o `pytesseract`.
+- Flusso di validazione "Human-in-the-loop": conferma/correzione prima del commit.
 
-### Infrastruttura e Deploy
+### 💸 Motore Finanziario e Net Balance
+- Classificazione delle spese per categoria (Utenze, Spesa, Affitto, ecc.).
+- Supporto per spese ricorrenti e divisioni personalizzate.
+- Algoritmo di calcolo automatico dei saldi: "chi deve cosa a chi".
+- Gestione e storicizzazione dei rimborsi fisici.
+
+### 📊 Aggregazione Dati e Notifiche
+- Dashboard di statistiche mensili e annuali calcolate dinamicamente.
+- Notifiche asincrone tramite Webhook Telegram per avvisi istantanei.
+- Previsioni di spesa basate su trend storici.
+
+---
+
+## 🛠️ Stack Tecnologico e Infrastruttura
+
+### Backend & DevOps
 | Tecnologia | Utilizzo |
 |---|---|
-| **Docker** | Tecnologia di conteinerizzazione |
-| **Render** | Hosting backend e DB |
-| **EAS (Expo Application Services)** | Build e deploy negli store (App Store / Google Play) |
-| **Cloudinary** | Storage per i file caricati (PDF, immagini) |
-| **GitHub** | Version control e CI/CD |
+| **Python 3.10+ & Django 6.0.4** | Core logic, ORM, sicurezza |
+| **Django REST Framework 3.17.1** | Esposizione API e serializzazione dati |
+| **PostgreSQL** | RDBMS principale (container Docker) |
+| **Docker Desktop** | 4 container: Backend, SonarQube, PostgreSQL, Ngrok |
+| **Docker Hub** | Repository pubblico del progetto |
+| **SonarQube** | 🔒 Analisi statica, debito tecnico (container porta 9000) |
+| **Ngrok** | 🔗 Tunnel sicuro per webhook Telegram da localhost (container porta 4040) |
+| **drf-spectacular** | Documentazione OpenAPI 3.0 / Swagger |
+| **Cloudinary** | Cloud storage per asset e documenti |
+| **pdfplumber / pytesseract** | Engine per elaborazione documenti |
+| **python-telegram-bot** | Webhook per notifiche realtime |
+| **django-background-tasks** | Task scheduling asincroni |
+| **djangorestframework_simplejwt** | JWT Token Authentication |
+
+### Frontend (Beta)
+| Tecnologia | Utilizzo |
+|---|---|
+| **React Native & Expo Router** | Universal Client (Web & Mobile routing) |
+| **TypeScript** | Type safety |
+| **TailwindCSS + NativeWind** | Utility-first styling |
+| **Context API** | State management |
+| **Axios & React Hook Form** | Data fetching e validazione |
 
 ---
 
-## Architettura
+## 🏗️ Architettura di Sistema
 
-```
+```text
 ┌─────────────────────────────────────────┐
-│        CLIENT UNIVERSALE (Expo Router)  │
-│             Web / iOS / Android         │
+│     CLIENT UNIVERSALE (Expo Router)     │
+│      Web (Stabile) / Mobile (Beta)      |
 └──────────────┬──────────────────────────┘
                │ HTTP/REST (JSON)
                ▼
 ┌─────────────────────────────────────────┐
-│         BACKEND (Django + DRF)          │
-│         Railway / Render                │
+│         BACKEND CONTAINERIZZATO         │
+│             (Django + DRF)              │
 │                                         │
 │  ┌─────────────┐   ┌─────────────────┐  │
-│  │  Auth API   │   │   Spese API     │  │
+│  │ Auth API    │   │ Spese/Rimborsi  │  │
 │  └─────────────┘   └─────────────────┘  │
 │  ┌─────────────┐   ┌─────────────────┐  │
-│  │  File API   │   │ Statistiche API │  │
+│  │ Documenti   │   │ Statistiche API │  │
 │  └─────────────┘   └─────────────────┘  │
-│                                         │
-│  ┌──────────────────────────────────┐   │
-│  │     Parser PDF / OCR Engine      │   │
-│  │   (Elaborazione File in RAM)     │   │
-│  └──────────────────────────────────┘   │
+│ ┌─────────────────────────────────────┐ │
+│ │   Parser PDF/OCR + Webhook Telegram │ │
+│ └─────────────────────────────────────┘ │
 └──────────────┬───────────────┬──────────┘
                │               │
        ┌───────┴───────┐       ▼
-       ▼               │ ┌───────────────┐
-┌────────────┐         │ │  File Storage │
-│ PostgreSQL │         │ │ (Cloudinary)  │
-│  (Railway) │         │ └───────────────┘
-└────────────┘         └─────────────────┘
+       ▼               │ ┌──────────────┐
+┌────────────┐         │ │  Cloudinary  │
+│PostgreSQL  │         │ │(File Storage)│
+└────────────┘         | |______________|
+       │               |________|
+       ▼
+┌──────────────────┐
+│   SonarQube      │  🔒 Scansione continua
+│  (DevSecOps)     │     codice & vulnerabilità
+└──────────────────┘
 ```
 
 ---
 
-## Struttura del Database
+## 📚 Documentazione API Swagger
 
-> **Nota Architetturale:** Per garantire elevati standard di sicurezza, prevenire attacchi di enumerazione (IDOR) e facilitare future sincronizzazioni offline del client mobile, **tutte le chiavi primarie (`id`) del database utilizzano il formato UUIDv4** anziché interi auto-incrementanti. Di conseguenza, anche tutte le Foreign Key referenziano stringhe UUID.
+L'API è completamente documentata con **OpenAPI 3.0** tramite **drf-spectacular**.
 
-### Tabella `user`
+### Accesso alla Documentazione Interattiva
+
+Avvia il backend e accedi a:
+
+| Strumento | URL |
+|-----------|-----|
+| **Swagger UI** | [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/) |
+| **ReDoc** | [http://localhost:8000/api/redoc/](http://localhost:8000/api/redoc/) |
+| **Schema OpenAPI (JSON)** | [http://localhost:8000/api/schema/](http://localhost:8000/api/schema/) |
+
+---
+
+## 📡 API Endpoints Dettagliati
+
+### 🔐 Autenticazione (`/api/v1/auth/`)
+
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| `POST` | `/api/v1/auth/register/` | Registrazione nuovo utente |
+| `POST` | `/api/v1/auth/login/` | Login e ottenimento token JWT |
+| `POST` | `/api/v1/auth/token/refresh/` | Refresh token JWT scaduto |
+| `GET` | `/api/v1/auth/user/` | Profilo utente autenticato |
+
+### 👥 Gruppi (`/api/v1/gruppi/`)
+
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| `GET` | `/api/v1/gruppi/` | Lista gruppi dell'utente |
+| `POST` | `/api/v1/gruppi/` | Creazione nuovo gruppo |
+| `GET` | `/api/v1/gruppi/{id}/` | Dettagli di un gruppo |
+| `PUT` | `/api/v1/gruppi/{id}/` | Modifica gruppo |
+| `DELETE` | `/api/v1/gruppi/{id}/` | Eliminazione gruppo |
+
+### 💰 Spese (`/api/v1/spese/`)
+
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| `GET` | `/api/v1/spese/` | Lista spese (filtrate per gruppo) |
+| `POST` | `/api/v1/spese/` | Registrazione nuova spesa |
+| `GET` | `/api/v1/spese/{id}/` | Dettagli spesa |
+| `PUT` | `/api/v1/spese/{id}/` | Modifica spesa |
+| `DELETE` | `/api/v1/spese/{id}/` | Eliminazione spesa |
+| `GET` | `/api/v1/categorie/` | Lista categorie spese |
+| `GET` | `/api/v1/rimborsi/` | Lista rimborsi |
+| `POST` | `/api/v1/rimborsi/` | Creazione rimborso |
+| `GET` | `/api/v1/liste/` | Lista liste della spesa |
+| `POST` | `/api/v1/liste/` | Creazione nuova lista |
+| `GET` | `/api/v1/articoli/` | Articoli della lista |
+| `GET` | `/api/v1/spese/saldi/` | Calcolo saldi tra coinquilini |
+
+### 📊 Statistiche (`/api/v1/statistiche/`)
+
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| `GET` | `/api/v1/statistiche/gruppo/mensili/` | Statistiche mensili per gruppo |
+| `GET` | `/api/v1/statistiche/gruppo/annuali/` | Statistiche annuali per gruppo |
+| `GET` | `/api/v1/statistiche/personali/` | Statistiche personali utente |
+| `GET` | `/api/v1/statistiche/gruppo/{group_id}/forecast/` | Previsione spese (AI) |
+
+### 📄 Documenti (`/api/v1/documenti/`)
+
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| `GET` | `/api/v1/documenti/` | Lista documenti |
+| `POST` | `/api/v1/documenti/` | Upload nuovo documento |
+| `GET` | `/api/v1/documenti/{id}/` | Dettagli documento |
+| `DELETE` | `/api/v1/documenti/{id}/` | Eliminazione documento |
+
+### 🔔 Notifiche Telegram (`/api/v1/notifiche/`)
+
+| Metodo | Endpoint | Descrizione |
+|--------|----------|-------------|
+| `POST` | `/api/v1/notifiche/telegram/generate-token/` | Genera token Telegram |
+| `POST` | `/api/v1/notifiche/telegram/webhook/` | Webhook Telegram (riceve messaggi) |
+| `GET` | `/api/v1/notifiche/telegram/status/` | Status connessione Telegram |
+
+### 🔐 Autenticazione
+
+Tutti gli endpoint (eccetto `/register/` e `/login/`) richiedono il token JWT.
+
+**Header richiesto:**
 ```
-[id, email, nome, cognome, avatar, created_at]
+Authorization: Bearer <your_jwt_token>
 ```
 
-### Tabella `gruppo`
-```
-[id, nome, codice_invito, created_at]
+## 🚀 Setup e Avvio Locale (Quickstart)
+
+### Prerequisiti
+```bash
+Python 3.13+
+Node.js 18+
+Docker & Docker Compose
+Git
 ```
 
-### Tabella `membro`
-```
-[id, user_id, gruppo_id, ruolo, created_at]
+### 1. Clonare il Repository
+
+```bash
+git clone https://github.com/lor07enzo/RoomSplit.git
+cd RoomSplit
 ```
 
-### Tabella `categoria`
-```
-[id, nome, icona, colore]
+### 2. Setup Backend (Django)
+
+```bash
+# Entra nella cartella backend
+cd RoomSplit-be
+
+# Crea ambiente virtuale
+python -m venv .venv
+
+# Attiva ambiente virtuale
+# Su Windows:
+.venv\Scripts\activate
+# Su macOS/Linux:
+source .venv/bin/activate
+
+# Installa dipendenze
+pip install -r requirements.txt
+
+# Crea file .env dalla base
+cp .env.example .env
+
+# Configura variabili in .env:
+# - SECRET_KEY
+# - DEBUG=True (sviluppo)
+# - DATABASE_URL
+# - CLOUDINARY_URL
+# - TELEGRAM_BOT_TOKEN (opzionale)
+
+# Esegui migrazioni
+python manage.py migrate
+
+# (Opzionale) Crea superuser per admin
+python manage.py createsuperuser
 ```
 
-### Tabella `gruppo_spesa`
-```
-[id, user_id, gruppo_id, pagatore_id, categoria_id,
-importo, descrizione, is_personale, saldata, is_ricorrente,
-created_at, prossimo_pagamento]
+### 3. Setup Frontend (React Native Expo)
+
+Il frontend **non usa Docker** e si avvia direttamente con Expo:
+
+```bash
+cd ../RoomSplit-fe
+
+# Installa dipendenze
+npm install
+
+# Crea .env se necessario
+# REACT_APP_API_URL=http://localhost:8000
+
+# Avvia dev server Expo
+npx expo start
+
+# Premi 'w' per avviare su web browser (consigliato)
+# Oppure scannerizza QR code con Expo Go su mobile
 ```
 
-### Tabella `documento`
-```
-[id, gruppo_spesa_id, caricato_da, file, nome_file, tipo_file, 
-status_ocr, importo_estratto, uploaded_at]
+### 4. Avvia l'Applicazione
+
+#### Opzione A: Con Docker Compose (Consigliato)
+
+```bash
+# Dalla root del progetto - Avvia i 4 container
+docker-compose up -d
+
+# Questo avvierà:
+# - Backend Django (porta 8000)
+# - PostgreSQL (porta 5432)
+# - SonarQube (porta 9000)
+# - Ngrok (per tunnel Telegram)
+
+# Visualizza log del backend
+docker-compose logs -f backend
+
+# Visualizza log di SonarQube
+docker-compose logs -f sonarqube
+
+# Ferma tutti i servizi
+docker-compose down
 ```
 
-### Tabella `spesa`
-```
-[id, gruppo_spesa_id, debitore_id, importo_dovuto]
-```
+#### Opzione B: Esecuzione Locale (Senza Docker)
 
-### Tabella `rimborso`
-```
-[id, from_membro_id, to_membro_id, tipologia, importo, nota, created_at]
-```
+```bash
+# Terminal 1 - Backend (richiede venv)
+cd RoomSplit-be
+source .venv/bin/activate  # o .venv\Scripts\activate su Windows
+python manage.py runserver
 
-### Tabella `lista_spesa`
-```
-[id, user_id, gruppo_id, gruppo_spesa_id, titolo, created_at, updated_at]
-```
-### Tabella `articolo`
-```
-[id, lista_spesa_id, inserito_da, preso_da, nome, quantita, created_at]
+# Terminal 2 - Frontend (non richiede Docker)
+cd RoomSplit-fe
+npx expo start
 ```
 
 ---
 
-## API Endpoints
+## 🔗 Setup Ngrok per Webhook Telegram
 
-### Autenticazione
-```
-POST   /api/v1/auth/register/         → Registrazione
-POST   /api/v1/auth/login/            → Login
-GET    /api/v1/auth/google/           → OAuth Google
-```
+Ngrok crea un tunnel sicuro da **localhost → Internet** permettendo a Telegram di inviare i messaggi al tuo backend locale.
 
-### Gruppi
-```
-POST   /api/v1/gruppi/                → Crea gruppo
-GET    /api/v1/gruppi/{id}/           → Dettaglio gruppo
-POST   /api/v1/gruppi/join/           → Entra con codice invito
-DELETE /api/v1/gruppi/{id}/           → Elimina gruppo
+### Avvio di Ngrok (Nel Container Docker)
+
+```bash
+# Se usi Docker Compose, Ngrok si avvia automaticamente come container
+docker-compose up -d ngrok
+
+# Il tunnel sarà disponibile e registrato in background
 ```
 
-### Spese
-```
-GET    /api/v1/spese/                 → Lista spese del gruppo
-POST   /api/v1/spese/                 → Aggiungi spesa
-PUT    /api/v1/spese/{id}/            → Modifica spesa
-DELETE /api/v1/spese/{id}/            → Elimina spesa
-POST   /api/v1/spese/upload-pdf/      → Upload bolletta + estrazione
+### Configurazione Telegram Webhook
+
+```bash
+# 1. Ottieni il token del tuo Bot Telegram
+TELEGRAM_BOT_TOKEN="<tuo_bot_token>"
+
+# 2. Recupera l'URL pubblico di Ngrok (da Docker logs o dashboard)
+# Esempio: https://abc123.ngrok.io
+
+# 3. Registra il webhook con Telegram (curl dal tuo PC)
+curl -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://abc123.ngrok.io/api/v1/notifiche/telegram/webhook/"}'
+
+# 4. Verifica il webhook
+curl https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getWebhookInfo
 ```
 
-### Statistiche e Predizioni
+### Flusso di Notifiche Telegram
+
 ```
-GET    /api/v1/statistiche/gruppo/mensili/   → Statistiche mese corrente
-GET    /api/v1/statistiche/gruppo/annuali/   → Statistiche anno corrente
-GET    /api/v1/statistiche/gruppo/saldi/     → Saldi debiti/crediti
-GET    /api/v1/statistiche/personali/        → Statistiche personali
-GET    /api/v1/statistiche/predizioni/→ Stima prossime spese/bollette
+Utente su Telegram
+     ↓
+Telegram API (invia POST a webhook)
+     ↓
+Ngrok Tunnel (https://abc123.ngrok.io)
+     ↓
+Backend Django (riceve su /api/v1/notifiche/telegram/webhook/)
+     ↓
+Elaborazione messaggio e registrazione notifica
+     ↓
+Response 200 OK a Telegram
 ```
 
-### Pagamenti (Playground)
-```
-POST   /api/v1/pagamenti/stripe/intent/ → Crea un payment intent Stripe
-POST   /api/v1/pagamenti/paypal/order/  → Crea un ordine PayPal
-```
-
-### Webhook Bot Chat
-```
-POST   /api/v1/webhooks/telegram/     → Ricezione messaggi Telegram
-```
-
-### Export
-```
-GET    /api/v1/export/pdf/            → Export PDF riepilogo
-GET    /api/v1/export/excel/          → Export Excel
+**Variabili di ambiente necessarie (.env):**
+```bash
+TELEGRAM_BOT_TOKEN=<tuo_token>
+NGROK_AUTHTOKEN=<tuo_authtoken_ngrok>  # Opzionale per collegamento account
+WEBHOOK_BASE_URL=<url_pubblico_ngrok>   # Es: https://abc123.ngrok.io
 ```
 
 ---
 
-## Roadmap di Sviluppo
+## 🧪 Testing e Quality Assurance
 
-### Fase 1 — Setup e Autenticazione
-- [x] Setup progetto Django + PostgreSQL
-- [x] Setup progetto React Native con Expo Router
-- [x] Sistema di registrazione e login (Backend)
-- [ ] Login con Google (OAuth2)
-- [x] Creazione e gestione gruppi/appartamenti
+### Esecuzione dei Test
 
-### Fase 2 — Gestione Spese Core
-- [x] CRUD spese con categorie personalizzate
-- [x] Divisione spese tra coinquilini transazionale
-- [x] Sistema calcolo debiti e crediti (Net Balance)
-- [x] Registrazione rimborsi
+```bash
+cd RoomSplit-be
 
-### Fase 3 — Upload e Parsing Documenti
-- [x] Integrazione Cloudinary per file storage sicuro
-- [x] Download file in RAM ed elaborazione sicura
-- [x] Integrazione pdfplumber per PDF nativi
-- [x] Integrazione pytesseract (OCR) con pattern matching intelligente
-- [x] Sviluppo UI Frontend per conferma importo estratto
+# Eseguire tutti i test
+pytest
 
-### Fase 4 — Statistiche e Dashboard
-- [x] Sviluppo API Backend: Statistiche mensili e annuali
-- [x] Sviluppo API Backend: Calcolo Saldi e Budget Personale
-- [x] Sviluppo UI: Grafici mensili e andamento annuale
-- [x] Sviluppo UI: Dashboard riepilogativa (Web & Mobile)
+# Test con coverage
+pytest --cov=. --cov-report=html
 
-### Fase 5 — Funzionalità Extra
-- [x] Lista della spesa condivisa
-- [ ] Export PDF ed Excel
-- [x] Notifiche Telegram
-- [x] Dark mode (Supporto nativo tramite NativeWind)
+# Test di un'app specifica
+pytest documenti
+pytest spese
+pytest gruppi
+pytest users
+pytest notifiche
+pytest statistiche
 
-### Fase 6 — Integrazioni Avanzate (AI, Pagamenti e Bot)
-- [x] Configurazione Webhook e Bot Telegram
-- [ ] Sviluppo logica di predizione spese storiche (stima prossime bollette)
-- [ ] Integrazione Stripe e PayPal (ambiente Sandbox)
+# Test verboso
+pytest -v
+
+# Test di un file specifico
+pytest users/tests/test_models.py -v
+```
+
+### Report di Coverage
+
+```bash
+# Genera report HTML
+pytest --cov=. --cov-report=html
+
+# Visualizza report
+# Windows:
+start htmlcov\index.html
+# macOS:
+open htmlcov/index.html
+# Linux:
+xdg-open htmlcov/index.html
+```
+
+### Standard di Codice
+
+- ✅ Scrivi test per tutte le nuove funzionalità
+- ✅ Segui **PEP 8** per Python, **ESLint** per TypeScript
+- ✅ Aggiorna documentazione se modifichi il comportamento pubblico
+- ✅ Assicura che tutti i test passino prima di fare una PR
+- ✅ Controllo statico con **SonarQube** passa senza criticità
 
 ---
 
-*Documentazione progetto RoomSplit sviluppato da Lorenzo Pelone*
+## 🔒 Qualità del Codice con SonarQube
+
+Il progetto adotta una strategia **DevSecOps** con scansione continua del codice tramite **SonarQube** (locale) e **SonarCloud** (integrato con GitHub CI/CD).
+
+### Setup SonarQube Locale
+
+SonarQube gira su un container Docker dedicato sulla porta 9000 (già configurato in `docker-compose.yml`):
+
+```bash
+# Avvia SonarQube tramite Docker Compose (insieme ai altri servizi)
+docker-compose up -d sonarqube
+
+# Oppure avvia tutto insieme
+docker-compose up -d
+
+# Accedi a http://localhost:9000
+# Default: admin/admin
+
+# Visualizza i log di SonarQube
+docker-compose logs -f sonarqube
+```
+
+### Scansione Automatica (GitHub Actions)
+
+Ogni **push su GitHub** attiva automaticamente la pipeline CI/CD che esegue:
+
+1. ✅ Build e test con pytest
+2. 📊 Scansione SonarQube
+3. 📈 Caricamento dei risultati su **SonarCloud**
+
+**Accedi alle statistiche di qualità:**
+- 🌐 **SonarCloud Dashboard**: [https://sonarcloud.io/organizations/lor07enzo/projects](https://sonarcloud.io/)
+- 📊 **Branch Coverage**: Visualizza coverage per ogni branch
+- 🐛 **Pull Request Analysis**: Feedback automatico su ogni PR
+
+### Scansione Manuale Locale
+
+```bash
+# Installa SonarScanner
+# https://docs.sonarqube.org/latest/analysis/scan/sonarscanner/
+
+# Esegui scansione dal progetto
+sonar-scanner \
+  -Dsonar.projectKey=roomsplit \
+  -Dsonar.sources=. \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.login=<TOKEN>
+```
+
+### Metriche Monitorate
+
+| Metrica | Target | Descrizione |
+|---------|--------|-------------|
+| **Code Coverage** | > 80% | Percentuale di codice coperto da test |
+| **Code Smells** | 0 Critic | Problemi di qualità e maintainability |
+| **Security Hotspots** | 0 | Potenziali vulnerabilità di sicurezza |
+| **Duplicazione** | < 5% | Percentuale di codice duplicato |
+| **Technical Debt** | < 1h | Tempo stimato per risolvere i problemi |
+| **Complessità Ciclomatica** | < 20 | Complessità media delle funzioni |
+
+---
+
+## 📊 Diagrammi e Documentazione
+
+### Diagramma Entity-Relationship
+
+Vedi [diagramma-ER.md](./diagramma-ER.md)
+
+### Diagramma UML
+
+Vedi [diagramma-UML.md](./diagramma-UML.md)
+
+---
+
+
+## 🚀 Sviluppi Futuri e Roadmap (Fase 2+)
+
+Il progetto è in continua evoluzione. Di seguito la roadmap pianificata per le prossime iterazioni:
+
+### Fase 2: Mobile Nativo e Payments (Q3 2025)
+
+| Feature | Descrizione | Priorità | Status |
+|---------|-----------|----------|--------|
+| **Mobile Native Release** | Build per iOS (TestFlight) e Android (Google Play) tramite EAS | 🔴 Alta | Planned |
+| **Stripe Integration** | Payment gateway per liquidare rimborsi in-app con commissioni ottimizzate | 🔴 Alta | Planning |
+| **PayPal Integration** | Support per alternative di pagamento globale | 🟡 Media | Backlog |
+| **Push Notifications** | Notifiche realtime per nuove spese, rimborsi e saldamenti (Firebase Cloud Messaging) | 🔴 Alta | Backlog |
+| **Offline Sync** | Sincronizzazione automatica quando ritorna la connessione | 🟡 Media | Backlog |
+
+### Fase 3: AI & Analytics (Q4 2025)
+
+| Feature | Descrizione | Priorità | Status |
+|---------|-----------|----------|--------|
+| **AI Predictive Modeling** | LLM-powered forecasting su endpoint `/api/v1/statistiche/gruppo/{group_id}/forecast/` | 🟡 Media | PoC in progress |
+| **Smart Expense Categorization** | Classificazione automatica tramite NLP dalle descrizioni | 🟡 Media | Planned |
+| **Budget Alerts** | Avvisi intelligenti quando spese si avvicinano al budget limite | 🟡 Media | Planned |
+| **Advanced Analytics** | Dashboard con grafici avanzati (Heatmap, Correlation, Seasonality) | 🟡 Media | Planned |
+
+### Fase 4: Enterprise & Data Export (2026)
+
+| Feature | Descrizione | Priorità | Status |
+|---------|-----------|----------|--------|
+| **Data Exporting** | Export bilanci in `.pdf` (con grafica), `.xlsx` (raw data), `.csv` | 🟡 Media | Planned |
+| **Audit Logs & Compliance** | Full tracking di tutte le modifiche per conformità fiscale | 🟡 Media | Planned |
+| **Multi-currency Support** | Gestione spese in diverse valute con conversione automatica | 🟢 Bassa | Planned |
+| **Integration with Tax Tools** | Export diretto per software contabili (es. Danea Easyfatt) | 🟢 Bassa | Planned |
+| **API Webhooks Custom** | Permettere integrazioni third-party via webhook | 🟢 Bassa | Planned |
+
+### Miglioramenti Continui (Ongoing)
+
+- 🔒 **Security Hardening**: Regular penetration testing e aggiornamenti dei token JWT
+- 📊 **Performance Optimization**: Caching strategico, pagination, query optimization
+- 🧪 **Testing Coverage**: Aumento target coverage a 90%+
+- 📱 **UX/UI Polish**: Refinement continuo basato su user feedback
+- 🌍 **Internazionalizzazione (i18n)**: Support multi-lingua (IT, EN, ES, FR)
+- ♿ **Accessibility (a11y)**: Compliance WCAG 2.1 AA
+
+### Legenda Priorità
+- 🔴 **Alta** - Critical per MVP, rilascio imminente
+- 🟡 **Media** - Importante per competitività, timeline flessibile
+- 🟢 **Bassa** - Nice-to-have, aggiunto se tempo/risorse
+
+---
+
+
+***Documentazione progetto RoomSplit sviluppato da Lorenzo Pelone***
