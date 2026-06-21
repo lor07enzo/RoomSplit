@@ -62,14 +62,24 @@ jobs:
         run: docker compose down
 
       # INTEGRAZIONE SNYK (Analisi Dipendenze Python)
-      - name: Setup Snyk per Python
-        uses: snyk/actions/python@master
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Installa dipendenze di sistema (per PostgreSQL/psycopg2)
+        run: sudo apt-get update && sudo apt-get install -y libpq-dev gcc
+
+      - name: Installa dipendenze Python
+        run: pip install -r RoomSplit-be/requirements.txt
+
+      - name: Setup Snyk CLI
+        uses: snyk/actions/setup@master
+
+      - name: Snyk Monitor (Python)
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          command: monitor 
-          # Aggiunto --skip-unresolved e --package-manager=pip
-          args: --file=RoomSplit-be/requirements.txt --package-manager=pip --skip-unresolved
+        run: snyk monitor --file=RoomSplit-be/requirements.txt --package-manager=pip
 
       # Setup e Delivery su Docker Hub
       - name: Setup Docker Buildx
