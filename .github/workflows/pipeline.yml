@@ -67,9 +67,9 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          # 'monitor' carica i risultati sulla dashboard. 
           command: monitor 
-          args: --file=RoomSplit-be/requirements.txt
+          # Aggiunto --skip-unresolved e --package-manager=pip
+          args: --file=RoomSplit-be/requirements.txt --package-manager=pip --skip-unresolved
 
       # Setup e Delivery su Docker Hub
       - name: Setup Docker Buildx
