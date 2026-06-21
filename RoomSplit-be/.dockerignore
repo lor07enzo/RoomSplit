@@ -1,0 +1,31 @@
+# Git e configurazioni
+.git
+.gitignore
+.github
+
+# File di ambiente e secrets (FONDAMENTALE)
+.env
+.env.local
+*.pem
+*.key
+
+# File Python e cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Database locali SQLite (se usati in sviluppo)
+db.sqlite3
+
+# Report di test e SonarCloud
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+sonar-project.properties
+.scannerwork/
