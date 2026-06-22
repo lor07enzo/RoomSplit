@@ -32,6 +32,25 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  # Cron Worker (Genera in automatico le spese ricorrenti)
+  cron_worker:
+    build: ./RoomSplit-be
+    container_name: roomsplit_cron
+    volumes:
+      - ./RoomSplit-be:/app
+    command: bash /app/entrypoint-cron.sh
+    user: root
+    environment:
+      - TZ=Europe/Rome
+      - DEBUG=1
+      - DB_NAME=roomsplit_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      - db
+
   ngrok:
     image: ngrok/ngrok:latest
     ports:

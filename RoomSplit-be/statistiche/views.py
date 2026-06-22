@@ -6,7 +6,7 @@ from django.db.models.functions import ExtractMonth
 from django.db.models import Sum, F
 from django.utils import timezone
 from gruppi.models import Membro
-from spese.models import GruppoSpesa, Spesa
+from spese.models import GruppoSpesa, Rimborso, Spesa
 import uuid 
 from .serializers import ExpenseForecastResponseSerializer
 from .services import generate_ai_expense_forecast
@@ -214,7 +214,7 @@ class StatistichePersonaliView(APIView):
 
     @extend_schema(
         summary="Statistiche Personali Utente",
-        description="Restituisce il riepilogo delle uscite personali dell'utente (somma delle spese private e delle quote dovute nei gruppi) per il mese corrente e il trend annuale.",
+        description="Restituisce il riepilogo delle uscite personali dell'utente (spese private, quote di gruppo e rimborsi) per il mese corrente e il trend annuale.",
         parameters=[
             OpenApiParameter('mese', OpenApiTypes.INT, description="Mese (1-12)", required=False, location=OpenApiParameter.QUERY),
             OpenApiParameter('anno', OpenApiTypes.INT, description="Anno (es. 2026)", required=False, location=OpenApiParameter.QUERY),
@@ -227,6 +227,8 @@ class StatistichePersonaliView(APIView):
                     'anno': drf_serializers.IntegerField(),
                     'spese_private_pure': drf_serializers.FloatField(),
                     'tua_parte_spese_gruppo': drf_serializers.FloatField(),
+                    'rimborsi_effettuati': drf_serializers.FloatField(),
+                    'rimborsi_ricevuti': drf_serializers.FloatField(),
                     'totale_uscita_mensile': drf_serializers.FloatField(),
                     'totale_anno': drf_serializers.FloatField(),
                     'andamento_mensile': inline_serializer(
@@ -247,6 +249,7 @@ class StatistichePersonaliView(APIView):
         anno = int(request.query_params.get('anno', timezone.now().year))
 
         # DATI MENSILI (Questo Mese)
+        # Spese private pure
         totale_personale = GruppoSpesa.objects.filter(
             user=user,
             is_personale=True,
@@ -262,35 +265,81 @@ class StatistichePersonaliView(APIView):
             gruppo_spesa__created_at__month=mese
         ).aggregate(tot=Sum('importo_dovuto'))['tot'] or 0
 
-        # DATI ANNUALI (Trend 12 Mesi)
+        # Rimborsi inviati ad altri utenti (Uscite)
+        rimborsi_effettuati = Rimborso.objects.filter(
+            from_membro__user=user,
+            created_at__year=anno,
+            created_at__month=mese
+        ).aggregate(tot=Sum('importo'))['tot'] or 0
+
+        # Rimborsi ricevuti da altri utenti (Entrate / Recuperi)
+        rimborsi_ricevuti = Rimborso.objects.filter(
+            to_membro__user=user,
+            created_at__year=anno,
+            created_at__month=mese
+        ).aggregate(tot=Sum('importo'))['tot'] or 0
+
+        # Il totale delle uscite nette mensili tiene conto dei rimborsi
+        totale_uscita_mensile = (totale_personale + totale_quote_gruppo + rimborsi_effettuati) - rimborsi_ricevuti
+
+        # DATI ANNUALI (Trend 12 Mesi)        
         spese_private_anno = GruppoSpesa.objects.filter(
             user=user,
             is_personale=True,
             created_at__year=anno
         ).annotate(
-            mese=ExtractMonth('created_at')
-        ).values('mese').annotate(
+            mese_extracted=ExtractMonth('created_at')
+        ).values('mese_extracted').annotate(
             totale=Sum('importo')
-        ).order_by('mese')
+        ).order_by('mese_extracted')
 
         quote_gruppo_anno = Spesa.objects.filter(
             debitore=user,
             gruppo_spesa__is_personale=False,
             gruppo_spesa__created_at__year=anno
         ).annotate(
-            mese=ExtractMonth('gruppo_spesa__created_at')
-        ).values('mese').annotate(
+            mese_extracted=ExtractMonth('gruppo_spesa__created_at')
+        ).values('mese_extracted').annotate(
             totale=Sum('importo_dovuto')
-        ).order_by('mese')
+        ).order_by('mese_extracted')
 
-        # Dizionario di base per i 12 mesi
-        dati_grafico_annuale = {m: 0 for m in range(1, 13)}
+        rimborsi_effettuati_anno = Rimborso.objects.filter(
+            from_membro__user=user,
+            created_at__year=anno
+        ).annotate(
+            mese_extracted=ExtractMonth('created_at')
+        ).values('mese_extracted').annotate(
+            totale=Sum('importo')
+        ).order_by('mese_extracted')
+
+        rimborsi_ricevuti_anno = Rimborso.objects.filter(
+            to_membro__user=user,
+            created_at__year=anno
+        ).annotate(
+            mese_extracted=ExtractMonth('created_at')
+        ).values('mese_extracted').annotate(
+            totale=Sum('importo')
+        ).order_by('mese_extracted')
+
+        # Dizionario di base per calcolare l'andamento netto dei 12 mesi
+        dati_grafico_annuale = {m: 0.0 for m in range(1, 13)}
 
         for record in spese_private_anno:
-            dati_grafico_annuale[record['mese']] += float(record['totale'])
+            dati_grafico_annuale[record['mese_extracted']] += float(record['totale'])
 
         for record in quote_gruppo_anno:
-            dati_grafico_annuale[record['mese']] += float(record['totale'])
+            dati_grafico_annuale[record['mese_extracted']] += float(record['totale'])
+
+        for record in rimborsi_effettuati_anno:
+            dati_grafico_annuale[record['mese_extracted']] += float(record['totale'])
+
+        # I rimborsi ricevuti abbattono le uscite totali del mese nel trend grafico
+        for record in rimborsi_ricevuti_anno:
+            dati_grafico_annuale[record['mese_extracted']] -= float(record['totale'])
+
+        for m in dati_grafico_annuale:
+            if dati_grafico_annuale[m] < 0:
+                dati_grafico_annuale[m] = 0.0
 
         totale_anno = sum(dati_grafico_annuale.values())
 
@@ -301,7 +350,9 @@ class StatistichePersonaliView(APIView):
             "anno": anno,
             "spese_private_pure": totale_personale,
             "tua_parte_spese_gruppo": totale_quote_gruppo,
-            "totale_uscita_mensile": totale_personale + totale_quote_gruppo,
+            "rimborsi_effettuati": rimborsi_effettuati,
+            "rimborsi_ricevuti": rimborsi_ricevuti,
+            "totale_uscita_mensile": max(0, totale_uscita_mensile),
             
             # Dati Annuali
             "totale_anno": totale_anno,

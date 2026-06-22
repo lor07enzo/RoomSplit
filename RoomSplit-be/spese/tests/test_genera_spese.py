@@ -145,5 +145,10 @@ class TestGeneraSpeseCommand:
         assert clone.is_ricorrente is True
         
         nuova_data_attesa = data_scadenza.date() + relativedelta(**delta_kwargs)
+        oggi_fittizio = fake_oggi.date()
+        
+        while nuova_data_attesa <= oggi_fittizio:
+            nuova_data_attesa += relativedelta(**delta_kwargs)
+            
         data_clone_locale = timezone.localtime(clone.prossimo_pagamento).date()
         assert data_clone_locale == nuova_data_attesa

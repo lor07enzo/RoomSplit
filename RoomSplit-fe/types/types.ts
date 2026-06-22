@@ -152,6 +152,8 @@ export interface StatistichePersonaliResponse {
   anno: number;
   spese_private_pure: number;
   tua_parte_spese_gruppo: number;
+  rimborsi_effettuati: number;
+  rimborsi_ricevuti: number;
   totale_uscita_mensile: number;
   totale_anno: number; 
   andamento_mensile: {

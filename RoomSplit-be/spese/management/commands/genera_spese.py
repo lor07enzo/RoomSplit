@@ -63,16 +63,28 @@ class Command(BaseCommand):
                 spesa.prossimo_pagamento = None
                 spesa.save()
 
+                quote_originali = list(spesa.quote_divise.all())
+
                 # Genera l'istanza clone proiettata nel futuro
                 spesa.pk = None
                 spesa.is_ricorrente = True
                 
                 # Calcola la nuova scadenza, la rende aware e la assegna al clone
                 data_futura = data_scadenza + delta
+                # Recupera il ritardo se le ricorrenze vengono aggiornate dopo giorni
+                while data_futura <= oggi:
+                    data_futura += delta
+
                 naive_dt_futura = datetime.datetime.combine(data_futura, datetime.time.min)
                 spesa.prossimo_pagamento = make_aware(naive_dt_futura)
                 
                 spesa.save() 
+
+                # Clona e ri-associa i figli (Spesa / Quote)
+                for quota in quote_originali:
+                    quota.pk = None
+                    quota.gruppo_spesa = spesa
+                    quota.save()
                 
                 spese_generate += 1
                 self.stdout.write(self.style.SUCCESS(f'Generata nuova spesa per: {spesa.nome} (Nuova scadenza: {spesa.prossimo_pagamento.date()})'))

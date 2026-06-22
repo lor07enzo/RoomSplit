@@ -102,8 +102,8 @@ classDiagram
     class ProfiloTelegram {
         BigAutoField id
         OneToOneField user
-        CharField chat_id
-        CharField connect_token
+        CharField chat_id (nullable)
+        CharField connect_token (nullable, unique)
         DateTimeField updated_at
     }
 

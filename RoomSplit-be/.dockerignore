@@ -3,7 +3,7 @@
 .gitignore
 .github
 
-# File di ambiente e secrets (FONDAMENTALE)
+# File di ambiente e secrets
 .env
 .env.local
 *.pem
@@ -19,7 +19,7 @@ env/
 venv/
 .venv/
 
-# Database locali SQLite (se usati in sviluppo)
+# Database locali SQLite
 db.sqlite3
 
 # Report di test e SonarCloud

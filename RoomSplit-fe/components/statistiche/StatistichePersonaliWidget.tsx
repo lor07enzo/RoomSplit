@@ -3,7 +3,7 @@ import { View, Text, ActivityIndicator, ScrollView, useWindowDimensions, Touchab
 import { VictoryChart, VictoryBar, VictoryAxis, VictoryLabel, VictoryTheme } from 'victory-native';
 import { useStatistiche } from '@/context/StatisticheContext';
 import { useColorScheme } from 'nativewind';
-import { ChevronLeft, ChevronRight } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, TrendingDown } from 'lucide-react-native';
 
 const NOMI_MESI_COMPLETI = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
 const NOMI_MESI_CORTI = ["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"];
@@ -62,10 +62,14 @@ export const StatistichePersonaliWidget: React.FC<StatistichePersonaliWidgetProp
       </View>
     );
   }
-  const dataMensile = [
+
+  const rawDataMensile = [
     { x: "Privato", y: Number(statistichePersonali.spese_private_pure) || 0, color: "#EC4899" },
-    { x: "Gruppo", y: Number(statistichePersonali.tua_parte_spese_gruppo) || 0, color: "#8B5CF6" }
-  ].reverse();
+    { x: "Gruppo", y: Number(statistichePersonali.tua_parte_spese_gruppo) || 0, color: "#8B5CF6" },
+    { x: "Rimborsi Dati", y: Number(statistichePersonali.rimborsi_effettuati) || 0, color: "#F59E0B" } 
+  ];
+
+  const dataMensile = rawDataMensile.filter(d => d.y > 0).reverse();
 
   // Dati Annuali 
   const barData = Array.from({ length: 12 }, (_, i) => ({ x: i + 1, y: 0 }));
@@ -90,6 +94,7 @@ export const StatistichePersonaliWidget: React.FC<StatistichePersonaliWidgetProp
   }
 
   const isCurrentMonth = currentMonth === meseOdierno && currentYear === annoOdierno;
+  const haRimborsiRicevuti = (Number(statistichePersonali.rimborsi_ricevuti) || 0) > 0;
 
   return (
     <View className={`flex ${isTablet ? 'flex-row' : 'flex-col'} gap-6`}>
@@ -114,11 +119,22 @@ export const StatistichePersonaliWidget: React.FC<StatistichePersonaliWidgetProp
           </View>
         </View>
 
-        <Text className="text-4xl font-black text-slate-900 dark:text-white mt-2">
-          € {Number(statistichePersonali.totale_uscita_mensile).toFixed(2)}
-        </Text>
+        <View className="items-start mt-2">
+          <Text className="text-4xl font-black text-slate-900 dark:text-white">
+            € {Number(statistichePersonali.totale_uscita_mensile).toFixed(2)}
+          </Text>
+          
+          {haRimborsiRicevuti && (
+            <View className="flex-row items-center mt-1 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-1 rounded-md">
+              <TrendingDown size={14} color="#10B981" />
+              <Text className="text-emerald-600 dark:text-emerald-400 font-bold text-xs ml-1">
+                Recuperati € {Number(statistichePersonali.rimborsi_ricevuti).toFixed(2)} dai rimborsi
+              </Text>
+            </View>
+          )}
+        </View>
 
-        {statistichePersonali.totale_uscita_mensile > 0 ? (
+        {dataMensile.length > 0 ? (
           <View style={{ alignItems: 'center', justifyContent: 'center', paddingVertical: 16 }}>
             <VictoryChart
               key={`personal-month-${currentMonth}-${currentYear}`}

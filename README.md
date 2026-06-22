@@ -8,18 +8,19 @@
 2. [Funzionalità Core (MVP)](#funzionalità-core-mvp)
 3. [Stack Tecnologico e Infrastruttura](#stack-tecnologico-e-infrastruttura)
 4. [Architettura di Sistema](#architettura-di-sistema)
-5. [Documentazione API Swagger](#documentazione-api-swagger)
-6. [API Endpoints Dettagliati](#api-endpoints-dettagliati)
-7. [Setup e Avvio Locale (Quickstart)](#setup-e-avvio-locale-quickstart)
-8. [Setup Ngrok per Webhook Telegram](#-setup-ngrok-per-webhook-telegram)
-9. [Testing e Quality Assurance](#-testing-e-quality-assurance)
-10. [Qualità del Codice con SonarQube](#-qualità-del-codice-con-sonarqube)
-11. [Diagrammi e Documentazione](#-diagrammi-e-documentazione)
-12. [Sviluppi Futuri e Roadmap](#-sviluppi-futuri-e-roadmap-fase-2)
+5. [Documentazione API (Swagger e Endpoints)](#documentazione-api-swagger-e-endpoints)
+6. [Setup e Avvio Locale (Quickstart)](#setup-e-avvio-locale-quickstart)
+7. [Setup Ngrok per Webhook Telegram](#setup-ngrok-per-webhook-telegram)
+8. [Testing e Quality Assurance](#testing-e-quality-assurance)
+9. [Qualità del Codice con SonarQube](#qualità-del-codice-con-sonarqube)
+10. [Scansione Vulnerabilità con Snyk](#scansione-vulnerabilità-con-snyk)
+11. [PoC: AI Expense Forecasting](#poc-ai-expense-forecasting)
+12. [Diagrammi e Documentazione](#diagrammi-e-documentazione)
+13. [Sviluppi Futuri e Roadmap](#sviluppi-futuri-e-roadmap-fase-2)
 
 ---
 
-## 📝 Descrizione del Progetto
+## Descrizione del Progetto
 
 **RoomSplit** è una piattaforma gestionale pensata per studenti fuorisede che condividono un appartamento. Sviluppata con una solida architettura backend e un approccio **Web-First**, permette di gestire le spese comuni, calcolare i saldi netti tra coinquilini e storicizzare i documenti.
 
@@ -60,7 +61,7 @@ Il progetto si concentra sulla robustezza delle API, sull'elaborazione documenta
 
 ---
 
-## 🛠️ Stack Tecnologico e Infrastruttura
+## Stack Tecnologico e Infrastruttura
 
 ### Backend & DevOps
 | Tecnologia | Utilizzo |
@@ -71,6 +72,7 @@ Il progetto si concentra sulla robustezza delle API, sull'elaborazione documenta
 | **Docker Desktop** | 4 container: Backend, SonarQube, PostgreSQL, Ngrok |
 | **Docker Hub** | Repository pubblico del progetto |
 | **SonarQube** | 🔒 Analisi statica, debito tecnico (container porta 9000) |
+| **Snyk** | 🛡️ Scansione vulnerabilità dipendenze Python & Node.js, monitoraggio continuo |
 | **Ngrok** | 🔗 Tunnel sicuro per webhook Telegram da localhost (container porta 4040) |
 | **drf-spectacular** | Documentazione OpenAPI 3.0 / Swagger |
 | **Cloudinary** | Cloud storage per asset e documenti |
@@ -90,7 +92,7 @@ Il progetto si concentra sulla robustezza delle API, sull'elaborazione documenta
 
 ---
 
-## 🏗️ Architettura di Sistema
+## Architettura di Sistema
 
 ```text
 ┌─────────────────────────────────────────┐
@@ -107,10 +109,11 @@ Il progetto si concentra sulla robustezza delle API, sull'elaborazione documenta
 │  │ Auth API    │   │ Spese/Rimborsi  │  │
 │  └─────────────┘   └─────────────────┘  │
 │  ┌─────────────┐   ┌─────────────────┐  │
-│  │ Documenti   │   │ Statistiche API │  │
+│  │ Gruppi API  │   │ Documenti       │  │
 │  └─────────────┘   └─────────────────┘  │
 │ ┌─────────────────────────────────────┐ │
-│ │   Parser PDF/OCR + Webhook Telegram │ │
+│ │ Statistiche API + Parser PDF/OCR +  │ │
+│ │           Webhook Telegram          │ │
 │ └─────────────────────────────────────┘ │
 └──────────────┬───────────────┬──────────┘
                │               │
@@ -129,96 +132,31 @@ Il progetto si concentra sulla robustezza delle API, sull'elaborazione documenta
 
 ---
 
-## 📚 Documentazione API Swagger
+## Documentazione API (Swagger e Endpoints)
 
-L'API è completamente documentata con **OpenAPI 3.0** tramite **drf-spectacular**.
+L'API è completamente documentata con **OpenAPI 3.0** tramite **drf-spectacular**. Questo strumento genera una documentazione interattiva e sempre aggiornata, che funge da unica fonte di verità per tutti gli endpoint.
+
+Si è scelto di non duplicare la lista di endpoint in questo `README` per aderire al principio **DRY (Don't Repeat Yourself)** e garantire che gli sviluppatori facciano sempre riferimento alla documentazione più recente e accurata.
 
 ### Accesso alla Documentazione Interattiva
 
-Avvia il backend e accedi a:
+Una volta avviato il backend, la documentazione è disponibile ai seguenti indirizzi:
 
-| Strumento | URL |
-|-----------|-----|
-| **Swagger UI** | [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/) |
-| **ReDoc** | [http://localhost:8000/api/redoc/](http://localhost:8000/api/redoc/) |
-| **Schema OpenAPI (JSON)** | [http://localhost:8000/api/schema/](http://localhost:8000/api/schema/) |
+| Strumento | URL | Descrizione |
+|-----------|-----|-------------|
+| **Swagger UI** | [http://localhost:8000/api/docs/](http://localhost:8000/api/docs/) | UI interattiva per esplorare e testare gli endpoint. |
+| **ReDoc** | [http://localhost:8000/api/redoc/](http://localhost:8000/api/redoc/) | Documentazione alternativa, pulita e leggibile. |
+| **Schema OpenAPI (JSON)** | [http://localhost:8000/api/schema/](http://localhost:8000/api/schema/) | Lo schema grezzo in formato JSON, utile per integrazioni programmatiche. |
 
----
+### Autenticazione
 
-## 📡 API Endpoints Dettagliati
+Tutti gli endpoint che richiedono autenticazione sono protetti tramite **JWT Token**. Per accedervi, è necessario includere il token nell'header `Authorization` come `Bearer`:
 
-### 🔐 Autenticazione (`/api/v1/auth/`)
-
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| `POST` | `/api/v1/auth/register/` | Registrazione nuovo utente |
-| `POST` | `/api/v1/auth/login/` | Login e ottenimento token JWT |
-| `POST` | `/api/v1/auth/token/refresh/` | Refresh token JWT scaduto |
-| `GET` | `/api/v1/auth/user/` | Profilo utente autenticato |
-
-### 👥 Gruppi (`/api/v1/gruppi/`)
-
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| `GET` | `/api/v1/gruppi/` | Lista gruppi dell'utente |
-| `POST` | `/api/v1/gruppi/` | Creazione nuovo gruppo |
-| `GET` | `/api/v1/gruppi/{id}/` | Dettagli di un gruppo |
-| `PUT` | `/api/v1/gruppi/{id}/` | Modifica gruppo |
-| `DELETE` | `/api/v1/gruppi/{id}/` | Eliminazione gruppo |
-
-### 💰 Spese (`/api/v1/spese/`)
-
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| `GET` | `/api/v1/spese/` | Lista spese (filtrate per gruppo) |
-| `POST` | `/api/v1/spese/` | Registrazione nuova spesa |
-| `GET` | `/api/v1/spese/{id}/` | Dettagli spesa |
-| `PUT` | `/api/v1/spese/{id}/` | Modifica spesa |
-| `DELETE` | `/api/v1/spese/{id}/` | Eliminazione spesa |
-| `GET` | `/api/v1/categorie/` | Lista categorie spese |
-| `GET` | `/api/v1/rimborsi/` | Lista rimborsi |
-| `POST` | `/api/v1/rimborsi/` | Creazione rimborso |
-| `GET` | `/api/v1/liste/` | Lista liste della spesa |
-| `POST` | `/api/v1/liste/` | Creazione nuova lista |
-| `GET` | `/api/v1/articoli/` | Articoli della lista |
-| `GET` | `/api/v1/spese/saldi/` | Calcolo saldi tra coinquilini |
-
-### 📊 Statistiche (`/api/v1/statistiche/`)
-
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| `GET` | `/api/v1/statistiche/gruppo/mensili/` | Statistiche mensili per gruppo |
-| `GET` | `/api/v1/statistiche/gruppo/annuali/` | Statistiche annuali per gruppo |
-| `GET` | `/api/v1/statistiche/personali/` | Statistiche personali utente |
-| `GET` | `/api/v1/statistiche/gruppo/{group_id}/forecast/` | Previsione spese (AI) |
-
-### 📄 Documenti (`/api/v1/documenti/`)
-
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| `GET` | `/api/v1/documenti/` | Lista documenti |
-| `POST` | `/api/v1/documenti/` | Upload nuovo documento |
-| `GET` | `/api/v1/documenti/{id}/` | Dettagli documento |
-| `DELETE` | `/api/v1/documenti/{id}/` | Eliminazione documento |
-
-### 🔔 Notifiche Telegram (`/api/v1/notifiche/`)
-
-| Metodo | Endpoint | Descrizione |
-|--------|----------|-------------|
-| `POST` | `/api/v1/notifiche/telegram/generate-token/` | Genera token Telegram |
-| `POST` | `/api/v1/notifiche/telegram/webhook/` | Webhook Telegram (riceve messaggi) |
-| `GET` | `/api/v1/notifiche/telegram/status/` | Status connessione Telegram |
-
-### 🔐 Autenticazione
-
-Tutti gli endpoint (eccetto `/register/` e `/login/`) richiedono il token JWT.
-
-**Header richiesto:**
 ```
 Authorization: Bearer <your_jwt_token>
 ```
 
-## 🚀 Setup e Avvio Locale (Quickstart)
+## Setup e Avvio Locale (Quickstart)
 
 ### Prerequisiti
 ```bash
@@ -329,7 +267,7 @@ npx expo start
 
 ---
 
-## 🔗 Setup Ngrok per Webhook Telegram
+## Setup Ngrok per Webhook Telegram
 
 Ngrok crea un tunnel sicuro da **localhost → Internet** permettendo a Telegram di inviare i messaggi al tuo backend locale.
 
@@ -385,7 +323,7 @@ WEBHOOK_BASE_URL=<url_pubblico_ngrok>   # Es: https://abc123.ngrok.io
 
 ---
 
-## 🧪 Testing e Quality Assurance
+## Testing e Quality Assurance
 
 ### Esecuzione dei Test
 
@@ -435,10 +373,11 @@ xdg-open htmlcov/index.html
 - ✅ Aggiorna documentazione se modifichi il comportamento pubblico
 - ✅ Assicura che tutti i test passino prima di fare una PR
 - ✅ Controllo statico con **SonarQube** passa senza criticità
+- ✅ **Snyk** non riporta vulnerabilità critiche non risolte
 
 ---
 
-## 🔒 Qualità del Codice con SonarQube
+## Qualità del Codice con SonarQube
 
 Il progetto adotta una strategia **DevSecOps** con scansione continua del codice tramite **SonarQube** (locale) e **SonarCloud** (integrato con GitHub CI/CD).
 
@@ -500,7 +439,213 @@ sonar-scanner \
 
 ---
 
-## 📊 Diagrammi e Documentazione
+## Scansione Vulnerabilità con Snyk
+
+Il progetto integra **Snyk** per il monitoraggio continuo e la gestione delle vulnerabilità nelle dipendenze del backend (Python), del frontend (JavaScript/Node.js) e delle immagini Docker (Repository Docker Hub).
+
+### Overview Snyk
+
+Snyk automatizza il rilevamento, il monitoraggio e la riparazione delle vulnerabilità di sicurezza note nel codice e nelle dipendenze:
+
+- 🛡️ **Vulnerabilità Zero-Day**: Rilevamento rapido di CVE pubblicati
+- 🔍 **Monitoraggio Continuo**: Ogni push attiva scansione automatica
+- 📊 **Dashboard Centralizzato**: Accesso ai report e alle metriche di sicurezza
+- 🚀 **Remediation Automatica**: Suggerimenti di patch per dipendenze vulnerabili
+- 🔗 **Integrazione GitHub**: Feedback automatico su PR e branch
+
+### Integrazione nella Pipeline CI/CD
+
+Ogni **push su GitHub** attiva automaticamente la scansione Snyk per:
+
+1. ✅ **Backend (Python)**
+   - Analizza `RoomSplit-be/requirements.txt`
+   - Monitora vulnerabilità nel framework Django, DRF e tutte le dipendenze Python
+   - Genera report di sicurezza nel dashboard Snyk
+
+2. ✅ **Frontend (JavaScript/Node.js)**
+   - Analizza `RoomSplit-fe/package.json`
+   - Scansiona dipendenze di React, Expo, TailwindCSS, etc.
+   - Verifica vulnerabilità nei pacchetti npm
+
+3. ✅ **Docker Hub Repository**
+   - Monitoraggio delle immagini Docker pubblicate (Backend, SonarQube e PostgreSQL)
+   - Scansione delle vulnerabilità nei layer delle immagini
+   - Rilevamento di dipendenze di sistema vulnerabili nei container
+   - Alert in caso di nuove CVE su immagini già pubblicate
+
+### Accesso al Dashboard Snyk
+
+```
+🌐 Snyk Dashboard: https://app.snyk.io/
+```
+
+**Configurazione richiesta:**
+- Collegamento repository GitHub
+- Autenticazione con account Snyk (free o premium)
+- Token Snyk memorizzato in GitHub Secrets come `SNYK_TOKEN`
+
+### Comandi Snyk Locali (Opzionale)
+
+Se usi Snyk CLI localmente durante lo sviluppo:
+
+```bash
+# Installa Snyk CLI
+npm install -g snyk
+
+# Autentica con il tuo account Snyk
+snyk auth
+
+# Scansiona dipendenze Python (dal backend)
+cd RoomSplit-be
+snyk test --file=requirements.txt
+
+# Scansiona dipendenze Frontend (dal frontend)
+cd ../RoomSplit-fe
+snyk test
+
+# Monitora progetto (aggiorna dashboard Snyk)
+snyk monitor
+
+# Suggerimenti di remediation
+snyk fix --file=requirements.txt
+
+# Scansiona immagini Docker locali
+snyk container test lor07enzo/roomsplit-backend:latest
+snyk container monitor lor07enzo/roomsplit-backend:latest
+
+# Scansiona Dockerfile prima di buildare
+snyk container test --file=Dockerfile
+```
+
+### Vulnerabilità Critiche e PR Checks
+
+Snyk blocca automaticamente le PR se rileva vulnerabilità critiche di sicurezza non risolte, garantendo che:
+
+- ✅ Nessuna libreria vulnerabile entra in produzione
+- ✅ Il team è notificato di problemi di sicurezza istantaneamente
+- ✅ Sono disponibili patch/upgrade suggeriti prima del merge
+
+---
+## PoC: AI Expense Forecasting
+
+Il progetto include un **Proof of Concept** per la previsione intelligente delle spese utilizzando **OpenAI GPT-4o-mini**. Questa feature analizza i dati storici e le spese ricorrenti per generare previsioni accurate sul budget del mese successivo.
+
+### Overview del PoC
+
+L'AI Forecasting combina:
+- 📊 **Storico spese**: Ultimi 6 mesi di dati aggregati per categoria
+- 🔁 **Spese ricorrenti**: Identificazione automatica di costi fissi (affitto, utenze, etc.)
+- 🧠 **Modello GPT-4o-mini**: Inferenza su trend e stagionalità
+- 📈 **Previsioni per categoria**: Stima dettagliata con livello di confidenza
+
+### Endpoint
+
+```
+GET /api/v1/statistiche/gruppo/<uuid:group_id>/forecast/
+```
+
+**Autenticazione richiesta**: JWT Token
+
+### Risposta dell'Endpoint
+
+```json
+{
+  "forecast_month": "Luglio 2026",
+  "total_estimated": 850.50,
+  "categories": [
+    {
+      "category": "Utenze",
+      "estimated_amount": 150.00,
+      "confidence_level": "High"
+    },
+    {
+      "category": "Spesa",
+      "estimated_amount": 400.00,
+      "confidence_level": "Medium"
+    },
+    {
+      "category": "Affitto",
+      "estimated_amount": 300.50,
+      "confidence_level": "High"
+    }
+  ],
+  "ai_insight": "Trend stabile con incremento stagionale di utenze. Mantenere cautela con spese discrezionali."
+}
+```
+
+### Implementazione Tecnica
+
+**Moduli coinvolti:**
+- 📝 **`statistiche/services.py`** - `generate_ai_expense_forecast()` & `get_historical_context()`
+  - Estrae dati storici degli ultimi 6 mesi
+  - Identifica spese ricorrenti attive
+  - Costruisce il prompt per l'AI
+  - Parsing della risposta JSON
+
+- 👁️ **`statistiche/views.py`** - `ExpenseForecastAPIView`
+  - Valida l'accesso dell'utente al gruppo
+  - Gestisce gli errori di autorizzazione
+  - Espone l'endpoint REST
+
+- ✅ **`statistiche/serializers.py`** - `ExpenseForecastResponseSerializer` & `CategoryForecastSerializer`
+  - Validazione della risposta AI
+  - Documentazione OpenAPI/Swagger
+
+### Flusso di Dati
+
+```
+Utente (GET /forecast/{group_id})
+        ↓
+ExpenseForecastAPIView (verifica permessi)
+        ↓
+get_historical_context() (estrae storico + ricorrenti)
+        ↓
+generate_ai_expense_forecast() (chiama OpenAI API)
+        ↓
+GPT-4o-mini (analizza dati e genera previsione)
+        ↓
+ExpenseForecastResponseSerializer (valida + serializza)
+        ↓
+Response JSON (ritorna previsione)
+```
+
+### Configurazione Richiesta
+
+Aggiungere a `.env`:
+```bash
+OPENAI_API_KEY=sk-...
+```
+
+### Livelli di Confidenza
+
+Le stime includono un `confidence_level` che indica l'affidabilità:
+
+- 🟢 **High**: Spesa ricorrente o storico molto stabile
+- 🟡 **Medium**: Dati stagionali o variabilità moderata
+- 🔴 **Low**: Pattern irregolare o dati limitati
+
+### Limiti e Considerazioni
+
+- ⚠️ **Privacy**: Solo dati aggregati inviati a OpenAI (nomi utenti NON inclusi)
+- ⏱️ **Latenza**: Prima chiamata ~2-3 sec (cold start API)
+- 💰 **Costi**: Utilizza modello economico GPT-4o-mini
+- 🎯 **Accuratezza**: Migliora con più dati storici (ideale dopo 3+ mesi)
+
+### Test dell'Endpoint
+
+```bash
+# Ottieni token JWT
+curl -X POST http://localhost:8000/api/v1/auth/login/ \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@example.com","password":"password"}'
+
+# Richiedi previsione
+curl -X GET http://localhost:8000/api/v1/statistiche/gruppo/YOUR_GROUP_UUID/forecast/ \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+---
+## Diagrammi e Documentazione
 
 ### Diagramma Entity-Relationship
 
@@ -513,7 +658,7 @@ Vedi [diagramma-UML.md](./diagramma-UML.md)
 ---
 
 
-## 🚀 Sviluppi Futuri e Roadmap (Fase 2+)
+## Sviluppi Futuri e Roadmap (Fase 2+)
 
 Il progetto è in continua evoluzione. Di seguito la roadmap pianificata per le prossime iterazioni:
 
@@ -525,6 +670,7 @@ Il progetto è in continua evoluzione. Di seguito la roadmap pianificata per le 
 | **Stripe Integration** | Payment gateway per liquidare rimborsi in-app con commissioni ottimizzate | 🔴 Alta | Planning |
 | **PayPal Integration** | Support per alternative di pagamento globale | 🟡 Media | Backlog |
 | **Push Notifications** | Notifiche realtime per nuove spese, rimborsi e saldamenti (Firebase Cloud Messaging) | 🔴 Alta | Backlog |
+| **In-App Notifications** | Toast/Snackbar notifications per feedback immediato (es. `react-native-toast-notifications`) | 🟡 Media | Planned |
 | **Offline Sync** | Sincronizzazione automatica quando ritorna la connessione | 🟡 Media | Backlog |
 
 ### Fase 3: AI & Analytics (Q4 2025)
@@ -545,6 +691,7 @@ Il progetto è in continua evoluzione. Di seguito la roadmap pianificata per le 
 | **Multi-currency Support** | Gestione spese in diverse valute con conversione automatica | 🟢 Bassa | Planned |
 | **Integration with Tax Tools** | Export diretto per software contabili (es. Danea Easyfatt) | 🟢 Bassa | Planned |
 | **API Webhooks Custom** | Permettere integrazioni third-party via webhook | 🟢 Bassa | Planned |
+| **Autenticazione Google** | Integrazione dell'autenticazione tramite account Google | 🟢 Bassa | Planned |
 
 ### Miglioramenti Continui (Ongoing)
 
