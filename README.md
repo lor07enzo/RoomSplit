@@ -51,6 +51,7 @@ Il progetto si concentra sulla robustezza delle API, sull'elaborazione documenta
 ### 💸 Motore Finanziario e Net Balance
 - Classificazione delle spese per categoria (Utenze, Spesa, Affitto, ecc.).
 - Supporto per spese ricorrenti e divisioni personalizzate.
+- Creazione automatica delle spese ricorrenti tramite worker cron nel container Docker.
 - Algoritmo di calcolo automatico dei saldi: "chi deve cosa a chi".
 - Gestione e storicizzazione dei rimborsi fisici.
 
@@ -69,9 +70,10 @@ Il progetto si concentra sulla robustezza delle API, sull'elaborazione documenta
 | **Python 3.10+ & Django 6.0.4** | Core logic, ORM, sicurezza |
 | **Django REST Framework 3.17.1** | Esposizione API e serializzazione dati |
 | **PostgreSQL** | RDBMS principale (container Docker) |
-| **Docker Desktop** | 4 container: Backend, SonarQube, PostgreSQL, Ngrok |
+| **Docker Desktop** | 5 container: Backend, SonarQube, PostgreSQL, Ngrok, Cron worker |
 | **Docker Hub** | Repository pubblico del progetto |
 | **SonarQube** | 🔒 Analisi statica, debito tecnico (container porta 9000) |
+| **Cron worker** | ⏰ Worker Docker che crea automaticamente le spese ricorrenti al giorno previsto |
 | **Snyk** | 🛡️ Scansione vulnerabilità dipendenze Python & Node.js, monitoraggio continuo |
 | **Ngrok** | 🔗 Tunnel sicuro per webhook Telegram da localhost (container porta 4040) |
 | **drf-spectacular** | Documentazione OpenAPI 3.0 / Swagger |
@@ -123,6 +125,12 @@ Il progetto si concentra sulla robustezza delle API, sull'elaborazione documenta
 │PostgreSQL  │         │ │(File Storage)│
 └────────────┘         | |______________|
        │               |________|
+       ▼
+┌──────────────────────────────┐
+│   Cron Worker / Scheduler    │
+│  (genera spese ricorrenti)   │
+└──────────────────────────────┘
+       │
        ▼
 ┌──────────────────┐
 │   SonarQube      │  🔒 Scansione continua
@@ -233,12 +241,13 @@ npx expo start
 #### Opzione A: Con Docker Compose (Consigliato)
 
 ```bash
-# Dalla root del progetto - Avvia i 4 container
+# Dalla root del progetto - Avvia i 5 container
 docker-compose up -d
 
 # Questo avvierà:
 # - Backend Django (porta 8000)
 # - PostgreSQL (porta 5432)
+# - Cron Worker per la generazione automatica delle spese ricorrenti
 # - SonarQube (porta 9000)
 # - Ngrok (per tunnel Telegram)
 
