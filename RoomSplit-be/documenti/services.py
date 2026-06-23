@@ -1,6 +1,7 @@
 # documenti/services.py
 import os
 import io
+import platform
 import requests
 import pdfplumber
 import pytesseract
@@ -9,11 +10,9 @@ import re
 from decimal import Decimal, InvalidOperation
 from .models import Documento
 
-# TODO: Per il deploy su Railway/Render, dovremo installare Tesseract tramite apt-get e rimuovere questa configurazione hardcoded.
-# Posizione locale della cartella Tesseract
-# Serve per eseguire OCR su immagini (JPEG/PNG)
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
-os.environ['TESSDATA_PREFIX'] = r'C:\Program Files\Tesseract-OCR\tessdata'
+if platform.system() == 'Windows':
+    pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+    os.environ['TESSDATA_PREFIX'] = r'C:\Program Files\Tesseract-OCR\tessdata'
 
 def estrai_dati_bolletta(documento_id):
     try:

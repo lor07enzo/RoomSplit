@@ -12,6 +12,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  # Backend principale unificato (API Django)
   backend:
     build: ./RoomSplit-be
     container_name: roomsplit_backend
@@ -20,6 +21,8 @@ services:
     ports:
       - "8000:8000"
     command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - ./RoomSplit-be/.env
     environment:
       - DEBUG=1
       - DB_NAME=roomsplit_db
@@ -32,6 +35,26 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  # Worker Asincrono per l'OCR
+  worker_tasks:
+    build: ./RoomSplit-be
+    container_name: roomsplit_worker
+    volumes:
+      - ./RoomSplit-be:/app 
+    command: python manage.py process_tasks
+    env_file:
+      - ./RoomSplit-be/.env 
+    environment:
+      - DEBUG=1
+      - DB_NAME=roomsplit_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      - db
+      - backend
+
   # Cron Worker (Genera in automatico le spese ricorrenti)
   cron_worker:
     build: ./RoomSplit-be
@@ -40,6 +63,8 @@ services:
       - ./RoomSplit-be:/app
     command: bash /app/entrypoint-cron.sh
     user: root
+    env_file:
+      - ./RoomSplit-be/.env
     environment:
       - TZ=Europe/Rome
       - DEBUG=1
@@ -51,12 +76,12 @@ services:
     depends_on:
       - db
 
+  # Tunnel per webhook (es. Telegram Bot)
   ngrok:
     image: ngrok/ngrok:latest
     ports:
-      - "4040:4040" # Espone la dashboard locale di ngrok
+      - "4040:4040"
     environment:
-      # Legge il token dal tuo file .env locale
       - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
     command: http backend:8000 
     depends_on:

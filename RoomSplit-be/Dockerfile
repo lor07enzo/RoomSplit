@@ -10,6 +10,9 @@ WORKDIR /app
 # Installa le dipendenze di sistema
 RUN apt-get update \
     && apt-get install -y --no-install-recommends gcc libpq-dev cron \
+    tesseract-ocr \
+    tesseract-ocr-ita \
+    tesseract-ocr-eng \
     && rm -rf /var/lib/apt/lists/*
 
 # Copia i requisiti e installa le librerie Python
